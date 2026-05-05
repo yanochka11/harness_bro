@@ -1,0 +1,21 @@
+# latexmk configuration. Drop into project root as `latexmkrc` (or .latexmkrc).
+# Run: latexmk -pdf main.tex   (or just `latexmk` if main.tex exists)
+
+# Output mode: 1 = PDF
+$pdf_mode = 1;
+
+# Always run biber/bibtex when needed
+$bibtex_use = 2;
+
+# pdflatex flags
+$pdflatex = 'pdflatex -interaction=nonstopmode -file-line-error -synctex=1 %O %S';
+
+# Use biber instead of bibtex (matches biblatex setting)
+$biber = 'biber --validate-datamodel %O %S';
+
+# Open PDF after build with default viewer (uncomment for desktop use)
+# $pdf_previewer = 'open %S';   # macOS
+# $pdf_previewer = 'xdg-open %S';  # Linux
+
+# Clean these on `latexmk -c`
+$clean_ext = "synctex.gz aux bbl bcf blg fdb_latexmk fls log out run.xml toc lof lot";

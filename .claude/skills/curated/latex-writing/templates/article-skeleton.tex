@@ -1,0 +1,61 @@
+% Article skeleton — copy this to your project as main.tex.
+% Fill in TITLE, AUTHOR, abstract, and \input section files.
+
+\documentclass[11pt,a4paper]{article}
+
+% — encoding and language —
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% — layout —
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{microtype}
+
+% — math —
+\usepackage{amsmath, amssymb, amsthm, mathtools}
+
+% — figures and tables —
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{caption, subcaption}
+\usepackage{float}
+
+% — links and references —
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+
+% — bibliography —
+\usepackage[backend=biber,style=alphabetic,sorting=ynt]{biblatex}
+\addbibresource{refs.bib}
+
+% — units and numbers —
+\usepackage{siunitx}
+
+% — custom commands —
+\newcommand{\ours}{\textsc{ProjectName}\xspace}
+\newcommand{\dataset}{DatasetName\xspace}
+
+\title{Your Paper Title}
+\author{Author One \and Author Two}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+TODO: one paragraph — problem, method, key result, contribution.
+\end{abstract}
+
+\input{sections/01-intro}
+\input{sections/02-related}
+\input{sections/03-method}
+\input{sections/04-experiments}
+\input{sections/05-discussion}
+\input{sections/06-conclusion}
+
+\printbibliography
+
+\end{document}

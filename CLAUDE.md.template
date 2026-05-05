@@ -1,0 +1,73 @@
+# harness_bro — Claude Code project context
+
+## Working directory
+`@@WORKSPACE@@`
+
+## Filesystem rules
+- Writeable: `@@WORKSPACE@@/**`
+- @@BANNED_RULE@@
+- HF cache: `${HF_HOME:-~/.cache/huggingface}` (configurable via `$HF_HOME` env var)
+- npm global: `@@WORKSPACE@@/.npm-global` (если есть)
+
+## Style — senior engineer
+- Direct, dense, technical. No filler, no hedging.
+- Read before write. Use Read/Grep/Glob to understand existing structure.
+- Match existing style — imports, docstring format, type hints, error handling.
+- When uncertain — run a check (cat / grep / pytest), not a guess.
+- Surface tradeoffs explicitly. State assumptions for non-obvious choices.
+
+## Code quality defaults
+- Python: type hints everywhere, docstrings for public APIs, no bare `except`.
+- AST-валидация автоматическая через `validate_python.py` hook (AST + py_compile + ruff F-rules).
+- Тесты: `/pytest` (или `pytest -x --ff --tb=short`).
+- Лайнт: `/lint` (ruff + mypy).
+- Коммиты: small, present tense ("add X" not "added X").
+
+## Long-running commands
+- Always `nohup` + `&` с логом в `@@WORKSPACE@@/runs/<task>/<ts>/`
+- Не блокировать чат foreground'ом training/eval — использовать subagent `runner`
+- `pkill -TERM` (graceful), не `-KILL` без причины
+
+## Subagents (через Task tool, триггерятся автоматически)
+- **code-writer** — implement / refactor / write tests. Триггеры: напиши, реализуй, рефактор, implement.
+- **bug-hunter** — диагноз failures / OOM / regressions. Триггеры: падает, traceback, OOM.
+- **runner** — старт/мониторинг/стоп долгих процессов. Триггеры: запусти, train, fine-tune, evaluate.
+- **paper-reader** — конспект arxiv/HF/PDF статей. Триггеры: прочитай статью, summarize paper.
+
+## Slash commands (17)
+- **Code (5):** `/lint`, `/format`, `/typecheck`, `/pytest`, `/coverage`
+- **Окружение (5):** `/env`, `/gpu`, `/procs`, `/diskcfs`, `/hf-cache`
+- **Состояние (7):** `/git-status`, `/find-todo`, `/last-error`, `/deps`, `/wandb-runs`, `/run-dirs`, `/clean-tmp`
+
+## MCP servers (`.mcp.json` в корне)
+- **filesystem**, **github**, **tmux**, **context7** — см. `.mcp.json`
+
+## Hooks (`.claude/hooks/`, зарегистрированы в settings.json)
+1. **nfs_guard.py** — блокирует записи в paths из `$HARNESS_BANNED_PATHS` env var (опционально).
+2. **secret_guard.py** — блокирует Write/Edit с секретами + `git commit/push/add` со staged-секретами.
+3. **validate_python.py** — после Write/Edit на `.py`: AST + `py_compile` + ruff F-rules → block при ошибке имён.
+4. **auto_save_skill.py** — учится на устойчивых tool-паттернах. Драфты в `.claude/skills/auto/`.
+5. **auto_fix_suggest.py** — после `pytest/ruff/mypy` с ошибкой ищет matching recipe в `.claude/memory/recipes/`.
+6. **statusline.sh** — `[Model] cwd | GPU% | py-procs`.
+
+## Memory `.claude/memory/`
+Постоянная память между сессиями:
+- `MEMORY.md` — индекс (одна строка на запись).
+- `recipes/<slug>.md` — успешные фикс-паттерны с regex `pattern:` для auto_fix_suggest.
+- `decisions/<slug>.md` — архитектурные решения.
+- `gotchas/<slug>.md` — что не работало, чего избегать.
+- `style/<slug>.md` — пользовательские предпочтения.
+
+**Правило**: при ошибке/неоднозначности — сначала `grep` по `.claude/memory/`. После успешного фикса — предложить пользователю записать через skill `record-recipe`.
+
+## Self-improvement
+- Skill `self-improve` — мета-аудит. Триггер «оптимизируй setup».
+- Skill `record-recipe` — записать фикс в memory. Триггер «запомни как фиксили».
+
+## Безопасность секретов
+4 уровня: hook `secret_guard.py` → `.gitignore` → skill `secret-guard` → опционально `pre-commit install`+ `gitleaks`.
+
+## Permissions
+- `permissions.allow` — частые read-only команды без prompt'а.
+- `permissions.deny` — пути запрещённые на запись.
+- `defaultMode: auto` + `skipAutoPermissionPrompt: true` — автономная работа.

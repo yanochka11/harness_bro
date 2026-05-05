@@ -1,0 +1,141 @@
+# ── Python ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ── Virtualenvs ──────────────────────────────────────────────────────
+.conda/
+.venv/
+venv/
+env/
+.npm-global/
+
+# ── Lint/test/typecheck caches ──────────────────────────────────────
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+
+# ── Jupyter ──────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_meta
+
+# ── ML / DS артефакты ────────────────────────────────────────────────
+runs/
+wandb/
+mlruns/
+lightning_logs/
+outputs/
+checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+*.bin
+*.onnx
+*.tflite
+*.h5
+*.npz
+*.parquet
+data/raw/
+data/interim/
+
+# ── Логи ─────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── IDE / OS ─────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Секреты (см. также .pre-commit-config.yaml + secret_guard hook) ─
+.env
+.env.local
+.env.*.local
+.envrc.local
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*.token
+.netrc
+.npmrc
+.pypirc
+.aws/credentials
+.aws/config
+.gnupg/
+secrets.yaml
+secrets.yml
+secrets.json
+credentials.json
+service-account*.json
+gcp-key*.json
+firebase-adminsdk*.json
+*-private-key.json
+auth.json
+.huggingface/
+.wandb/
+# detect-secrets baseline (этот файл — допустимая часть конфига)
+!.secrets.baseline
+
+# ── Claude Code: статусы и кеши (не конфиг!) ────────────────────────
+.claude/state/
+.claude/sessions/
+.claude/cache/
+.claude/backups/
+.claude/shell-snapshots/
+.claude/session-env/
+.claude/file-history/
+.claude/plans/
+.claude/tasks/
+.claude/projects/
+.claude/history.jsonl
+.claude/.credentials.json
+.claude/.claude.json
+.claude/.nfs*
+.claude/skills/auto/
+.claude/plugins/marketplaces/
+.claude/checkpoints/
+
+# ── Hermes: кеши ставок ──────────────────────────────────────────────
+hermes_root/.cache/
+hermes_root/.local/share/uv/
+hermes_root/.local/share/npm/
+hermes_root/.npm/
+
+# ── Snapshot'ы / временное ──────────────────────────────────────────
+skills-inventory.txt
+*.tmp
+*.bak
+*.orig
+*.rej
+
+# ── Что СОХРАНЯЕМ в git (whitelist) ─────────────────────────────────
+# .claude/agents/      — определения subagent'ов
+# .claude/commands/    — slash-команды
+# .claude/hooks/       — hook-скрипты
+# .claude/skills/curated/  — отобранные скиллы
+# .claude/skills/ported/   — импортированные скиллы
+# .claude/settings.json    — конфиг
+# .mcp.json                — MCP-серверы
+# CLAUDE.md, README.md, pyproject.toml, .pre-commit-config.yaml, *.sh

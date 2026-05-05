@@ -1,0 +1,55 @@
+% Report skeleton — copy to your project as main.tex.
+% Use \chapter for top-level sections (only available in `report` and `book`).
+
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english,russian]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\usepackage[backend=biber]{biblatex}
+\addbibresource{refs.bib}
+\usepackage{siunitx}
+
+\title{Project Report: Topic}
+\author{Author Name}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\chapter{Introduction}
+\input{ch01-intro}
+
+\chapter{Background}
+\input{ch02-background}
+
+\chapter{Methodology}
+\input{ch03-method}
+
+\chapter{Experiments and Results}
+\input{ch04-experiments}
+
+\chapter{Discussion}
+\input{ch05-discussion}
+
+\chapter{Conclusion}
+\input{ch06-conclusion}
+
+\printbibliography
+
+\appendix
+\chapter{Additional details}
+\input{appendix-A}
+
+\end{document}

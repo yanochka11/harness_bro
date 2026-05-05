@@ -1,0 +1,27 @@
+# Recommended .gitignore for LaTeX projects.
+# Rename to .gitignore in your project root.
+
+# build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+
+# generated PDF (uncomment if you don't want to track it)
+# *.pdf
+
+# editor swap
+*.swp
+.DS_Store
+
+# Overleaf-specific
+.olproject/

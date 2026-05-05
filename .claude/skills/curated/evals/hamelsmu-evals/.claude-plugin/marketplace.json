@@ -1,0 +1,16 @@
+{
+  "name": "hamelsmu-evals-skills",
+  "metadata": {
+    "description": "Skills for building LLM evaluations"
+  },
+  "owner": {
+    "name": "Hamel Husain"
+  },
+  "plugins": [
+    {
+      "name": "evals-skills",
+      "source": "./",
+      "description": "Skills for building LLM evaluations: pipeline audit, error analysis, synthetic data generation, LLM-as-Judge design, evaluator validation, RAG evaluation, and annotation interfaces."
+    }
+  ]
+}

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>harness_bro · готовая среда Claude Code для ML/AI</title>
+<meta name="description" content="Готовая обвязка над Claude Code: 6 хуков, 17 быстрых команд, 90+ скиллов, 5 субагентов, постоянная память, защита от утечек ключей. Установка одной командой." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          accent: {
+            50:  '#ecfdf5',
+            300: '#6ee7b7',
+            400: '#34d399',
+            500: '#10b981',
+            600: '#059669',
+          }
+        },
+        animation: {
+          'gradient-x': 'gradient-x 8s ease infinite',
+          'float':      'float 6s ease-in-out infinite',
+          'pulse-slow': 'pulse 4s ease-in-out infinite',
+        },
+        keyframes: {
+          'gradient-x': {
+            '0%, 100%': { 'background-position': '0% 50%' },
+            '50%':      { 'background-position': '100% 50%' },
+          },
+          'float': {
+            '0%, 100%': { transform: 'translateY(0px)' },
+            '50%':      { transform: 'translateY(-12px)' },
+          },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body {
+    background:
+      radial-gradient(1000px 600px at 50% -10%, rgba(16,185,129,0.15), transparent),
+      radial-gradient(800px 500px at 100% 100%, rgba(139,92,246,0.12), transparent),
+      #0a0e14;
+    color: #e6edf3;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+  .glow {
+    box-shadow:
+      0 0 0 1px rgba(16,185,129,0.2),
+      0 0 40px -8px rgba(16,185,129,0.5),
+      0 0 80px -20px rgba(16,185,129,0.4);
+  }
+  .text-gradient {
+    background: linear-gradient(135deg, #6ee7b7 0%, #34d399 30%, #818cf8 70%, #c084fc 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% 200%;
+  }
+  .glass {
+    background: rgba(15,23,28,0.65);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .card-hover {
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-4px);
+    border-color: rgba(52,211,153,0.4);
+    box-shadow: 0 20px 50px -20px rgba(16,185,129,0.3);
+  }
+  .scroll-fade {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .scroll-fade.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+  details[open] summary .arrow { transform: rotate(90deg); }
+  .arrow { transition: transform 0.2s ease; }
+  ::selection { background: rgba(16,185,129,0.35); color: #fff; }
+
+  /* Marquee для бесконечной прокрутки логотипов источников */
+  .marquee { display: flex; overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+  .marquee-track { display: flex; animation: scroll 30s linear infinite; }
+  @keyframes scroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<div id="root"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "react":       "https://esm.sh/react@18.3.1",
+    "react-dom":   "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.17?deps=react@18.3.1",
+    "lucide-react":  "https://esm.sh/lucide-react@0.468.0?deps=react@18.3.1"
+  }
+}
+</script>
+
+<script type="module">
+import React, { useState, useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import { motion, useInView, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import {
+  Terminal, Zap, Shield, Brain, Users, Wand2, Hammer, Database, FileCode, Network,
+  Github, Copy, Check, ChevronRight, Rocket, Workflow, BookOpen, Globe, Sparkles,
+  Lock, RefreshCw, GitBranch, Bot, Layers, Eye
+} from 'lucide-react';
+
+const e = React.createElement;
+
+const GITHUB_URL = 'https://github.com/yanochka11/harness_bro';
+
+// — small helpers ----------------------------------------------------------
+function CopyButton({ text, label = 'Copy' }) {
+  const [copied, setCopied] = useState(false);
+  const onClick = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+  return e('button', {
+    onClick,
+    className: 'flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono rounded-md border border-white/10 bg-white/5 hover:bg-white/10 hover:border-accent-400/40 transition'
+  },
+    e(copied ? Check : Copy, { className: `w-3.5 h-3.5 ${copied ? 'text-accent-400' : ''}` }),
+    copied ? 'copied' : label
+  );
+}
+
+function FadeIn({ children, delay = 0, y = 20 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-50px' });
+  return e(motion.div, {
+    ref,
+    initial: { opacity: 0, y },
+    animate: inView ? { opacity: 1, y: 0 } : { opacity: 0, y },
+    transition: { duration: 0.6, delay, ease: [0.16, 1, 0.3, 1] },
+  }, children);
+}
+
+function Counter({ to, suffix = '' }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    let start = 0;
+    const dur = 1500;
+    const t0 = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.floor(start + (to - start) * eased));
+      if (p < 1) requestAnimationFrame(step);
+      else setN(to);
+    };
+    requestAnimationFrame(step);
+  }, [inView, to]);
+  return e('span', { ref }, `${n}${suffix}`);
+}
+
+// — Nav --------------------------------------------------------------------
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return e('nav', {
+    className: `fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'glass border-b border-white/5' : ''}`
+  },
+    e('div', { className: 'max-w-6xl mx-auto px-6 h-16 flex items-center justify-between' },
+      e('a', { href: '#hero', className: 'flex items-center gap-2.5 group' },
+        e('div', { className: 'w-8 h-8 rounded-lg bg-gradient-to-br from-accent-400 to-indigo-500 flex items-center justify-center shadow-lg shadow-accent-500/30' },
+          e(Terminal, { className: 'w-4 h-4 text-slate-950' })
+        ),
+        e('span', { className: 'font-mono font-semibold text-base tracking-tight' }, 'harness_bro')
+      ),
+      e('div', { className: 'hidden md:flex items-center gap-8 text-sm text-slate-400' },
+        e('a', { href: '#features', className: 'hover:text-white transition' }, 'Фишки'),
+        e('a', { href: '#inside',   className: 'hover:text-white transition' }, 'Что внутри'),
+        e('a', { href: '#install',  className: 'hover:text-white transition' }, 'Установка'),
+        e('a', { href: '#triggers', className: 'hover:text-white transition' }, 'Триггеры'),
+      ),
+      e('a', {
+        href: GITHUB_URL,
+        target: '_blank',
+        rel: 'noopener',
+        className: 'flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border border-white/10 hover:bg-white/5 hover:border-white/20 transition'
+      },
+        e(Github, { className: 'w-4 h-4' }),
+        e('span', null, 'GitHub')
+      )
+    )
+  );
+}
+
+// — Hero -------------------------------------------------------------------
+function Hero() {
+  const installCmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  return e('section', { id: 'hero', className: 'relative pt-32 pb-20 overflow-hidden' },
+    e('div', { className: 'absolute inset-0 grid-pattern opacity-30 pointer-events-none' }),
+    e('div', { className: 'absolute -top-32 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-accent-500/20 blur-[120px] rounded-full pointer-events-none' }),
+
+    e('div', { className: 'relative max-w-5xl mx-auto px-6 text-center' },
+      e(motion.div, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+        className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-accent-400/30 bg-accent-400/10 text-xs font-medium text-accent-300'
+      },
+        e(Sparkles, { className: 'w-3.5 h-3.5' }),
+        'Готовая среда Claude Code · MIT'
+      ),
+
+      e(motion.h1, {
+        initial: { opacity: 0, y: 24 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, delay: 0.1 },
+        className: 'text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6'
+      },
+        e('span', { className: 'block' }, 'Claude Code,'),
+        e('span', { className: 'block text-gradient animate-gradient-x' }, 'заточенный под ML')
+      ),
+
+      e(motion.p, {
+        initial: { opacity: 0, y: 24 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, delay: 0.2 },
+        className: 'text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed'
+      },
+        '6 хуков, 17 быстрых команд, 90+ скиллов, 5 субагентов, постоянная память, защита от утечки ключей. ',
+        e('span', { className: 'text-slate-300' }, 'Установка одной командой.')
+      ),
+
+      // install command
+      e(motion.div, {
+        initial: { opacity: 0, scale: 0.97 },
+        animate: { opacity: 1, scale: 1 },
+        transition: { duration: 0.7, delay: 0.3 },
+        className: 'max-w-3xl mx-auto mb-8'
+      },
+        e('div', { className: 'glass rounded-xl overflow-hidden glow' },
+          e('div', { className: 'flex items-center justify-between px-4 py-2 border-b border-white/5 bg-black/20' },
+            e('div', { className: 'flex items-center gap-2 text-xs text-slate-500 font-mono' },
+              e('span', { className: 'flex gap-1.5' },
+                e('span', { className: 'w-2.5 h-2.5 rounded-full bg-red-500/60' }),
+                e('span', { className: 'w-2.5 h-2.5 rounded-full bg-yellow-500/60' }),
+                e('span', { className: 'w-2.5 h-2.5 rounded-full bg-green-500/60' }),
+              ),
+              e('span', { className: 'ml-2' }, 'bash')
+            ),
+            e(CopyButton, { text: installCmd })
+          ),
+          e('div', { className: 'p-5 font-mono text-sm md:text-base text-left overflow-x-auto' },
+            e('span', { className: 'text-accent-400' }, '$ '),
+            e('span', { className: 'text-slate-200' }, 'curl -fsSL '),
+            e('span', { className: 'text-indigo-300' }, 'https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh'),
+            e('span', { className: 'text-slate-200' }, ' | bash')
+          )
+        )
+      ),
+
+      e(motion.div, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, delay: 0.4 },
+        className: 'flex flex-wrap items-center justify-center gap-3'
+      },
+        e('a', {
+          href: '#install',
+          className: 'inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-accent-400 hover:bg-accent-300 text-slate-950 font-semibold transition shadow-lg shadow-accent-500/20'
+        },
+          e(Rocket, { className: 'w-4 h-4' }),
+          'Поставить за 30 секунд'
+        ),
+        e('a', {
+          href: GITHUB_URL,
+          target: '_blank',
+          rel: 'noopener',
+          className: 'inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition'
+        },
+          e(Github, { className: 'w-4 h-4' }),
+          'Исходники на GitHub',
+          e(ChevronRight, { className: 'w-4 h-4' })
+        ),
+      )
+    )
+  );
+}
+
+// — Stats bar --------------------------------------------------------------
+function Stats() {
+  const stats = [
+    { n: 90, suffix: '+', label: 'скиллов', icon: BookOpen },
+    { n: 6,  suffix: '',  label: 'хуков',   icon: Hammer },
+    { n: 5,  suffix: '',  label: 'субагентов', icon: Users },
+    { n: 17, suffix: '',  label: 'команд',  icon: Terminal },
+    { n: 4,  suffix: '',  label: 'MCP-серверов', icon: Network },
+    { n: 99, suffix: '',  label: 'SKILL.md в репо', icon: Check },
+  ];
+  return e('section', { className: 'border-y border-white/5 bg-black/20 backdrop-blur' },
+    e('div', { className: 'max-w-6xl mx-auto px-6 py-12' },
+      e('div', { className: 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8' },
+        ...stats.map((s, i) =>
+          e(FadeIn, { key: i, delay: i * 0.05 },
+            e('div', { className: 'text-center' },
+              e(s.icon, { className: 'w-5 h-5 text-accent-400 mx-auto mb-2' }),
+              e('div', { className: 'text-3xl md:text-4xl font-bold tracking-tight' },
+                e(Counter, { to: s.n, suffix: s.suffix })
+              ),
+              e('div', { className: 'text-sm text-slate-500 mt-1' }, s.label)
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// — Features ---------------------------------------------------------------
+const FEATURES = [
+  {
+    icon: Shield,
+    title: 'Защита от утечки секретов',
+    text: 'Хук secret_guard блокирует Write/Edit и git commit/push если в коде ключи OpenAI, Anthropic, HuggingFace, GitHub PAT, AWS, GCP, Slack, Stripe, W&B, JWT, PEM или пароли в строках подключения к БД.',
+    color: 'from-rose-400 to-orange-400',
+  },
+  {
+    icon: Brain,
+    title: 'Постоянная память между сессиями',
+    text: 'Recipe-файлы с regex-паттернами в .claude/memory/. После успешного фикса говорите «запомни» — и в следующий раз эта же ошибка решается мгновенно через auto_fix_suggest hook.',
+    color: 'from-purple-400 to-indigo-400',
+  },
+  {
+    icon: Users,
+    title: '5 субагентов на триггерах',
+    text: 'Не нужно Task(subagent_type=...). По «напиши» поднимется code-writer, по «падает» — bug-hunter, по «запусти» — runner (фон + лог), по «arxiv» — paper-reader, по «исследуй» — researcher.',
+    color: 'from-accent-400 to-emerald-400',
+  },
+  {
+    icon: Lock,
+    title: 'Anti-hallucination протокол',
+    text: 'Скилл verify-claim триггерится на «latest», «какая версия», «best practices» — заставляет проверить факт до утверждения. Скилл web-research даёт методологию поиска. Никаких confident-sounding URL-выдумок.',
+    color: 'from-blue-400 to-cyan-400',
+  },
+  {
+    icon: Zap,
+    title: 'Автофикс-цикл',
+    text: 'pytest/ruff/mypy упало → auto_fix_suggest читает stderr → grep по recipes/ → matching рецепт инжектится Claude в stderr → фикс применяется. Со 2-го раза одна ошибка = 0 токенов на расследование.',
+    color: 'from-yellow-400 to-amber-400',
+  },
+  {
+    icon: FileCode,
+    title: 'AST-валидация Python',
+    text: 'После каждого Write/Edit на .py — автоматически AST + py_compile + ruff F-rules (F821 undefined name, F823 local-before-assignment, F811 redefinition). Сломанный код блокируется до коммита.',
+    color: 'from-green-400 to-teal-400',
+  },
+  {
+    icon: RefreshCw,
+    title: 'Самообучение',
+    text: 'auto_save_skill следит за tool-вызовами. ≥3 повторов устойчивого паттерна (с фильтром шума) = черновик скилла. Скилл self-improve проводит мета-аудит и предлагает что повышать в основной набор.',
+    color: 'from-fuchsia-400 to-pink-400',
+  },
+  {
+    icon: Workflow,
+    title: 'Долгие процессы — только в фоне',
+    text: 'Субагент runner всегда запускает обучения и эвалуации через nohup с tee в runs/<task>/<ts>/run.log. Никогда не блокирует чат. Мониторинг через pgrep / tail -F / nvidia-smi.',
+    color: 'from-cyan-400 to-blue-400',
+  },
+  {
+    icon: Globe,
+    title: 'Поддержка MLSpace и proxy',
+    text: 'install.sh детектит HTTPS_PROXY, маскирует credentials в выводе, прокидывает в npm config, проверяет доступность github.com. На MLSpace — экспортируете proxy и ставите одной командой.',
+    color: 'from-violet-400 to-purple-400',
+  },
+  {
+    icon: Bot,
+    title: 'Минимум подтверждений',
+    text: '43 read-only команды в permissions.allow (rg, ls, cat, git status, nvidia-smi, pytest, ruff, mypy и др.) + defaultMode auto. Никакого спама с prompt’ом на каждый cat file.py.',
+    color: 'from-emerald-400 to-green-400',
+  },
+];
+
+function Features() {
+  return e('section', { id: 'features', className: 'py-24 relative' },
+    e('div', { className: 'max-w-6xl mx-auto px-6' },
+      e(FadeIn, null,
+        e('div', { className: 'text-center mb-16' },
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
+            e(Sparkles, { className: 'w-3.5 h-3.5' }), '10 ключевых фишек'
+          ),
+          e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
+            'Не просто конфиг. ',
+            e('span', { className: 'text-gradient' }, 'Целая среда.')
+          ),
+          e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
+            'Каждая фишка решает реальную боль ML-разработки: утечка ключей в git, забывание решений, падающие тренировки, галлюцинации модели на свежих API.'
+          )
+        )
+      ),
+      e('div', { className: 'grid md:grid-cols-2 lg:grid-cols-3 gap-5' },
+        ...FEATURES.map((f, i) =>
+          e(FadeIn, { key: i, delay: (i % 3) * 0.1 },
+            e('div', { className: 'card-hover h-full p-6 rounded-2xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04]' },
+              e('div', { className: `inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br ${f.color} mb-4 shadow-lg` },
+                e(f.icon, { className: 'w-5 h-5 text-slate-950' })
+              ),
+              e('h3', { className: 'text-lg font-semibold mb-2' }, f.title),
+              e('p', { className: 'text-sm text-slate-400 leading-relaxed' }, f.text),
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// — Inside (tabs) ----------------------------------------------------------
+const INSIDE_DATA = {
+  Субагенты: {
+    icon: Users,
+    items: [
+      { name: 'code-writer',  triggers: 'напиши, реализуй, рефактор',     desc: 'Читает 3-5 соседних файлов, повторяет существующий стиль, AST-валидирует, прогоняет тесты.' },
+      { name: 'bug-hunter',   triggers: 'падает, traceback, OOM',         desc: 'Диагноз → 2-3 ранжированных гипотезы → точечный фикс + регрессионный тест.' },
+      { name: 'runner',       triggers: 'запусти, обучи, evaluate',       desc: 'Только nohup-фон, лог в runs/<task>/<ts>/. Никогда не блокирует чат.' },
+      { name: 'paper-reader', triggers: 'прочитай статью, arxiv',         desc: 'Структурный конспект: Problem / Method / Results / Limitations / Relevance.' },
+      { name: 'researcher',   triggers: 'исследуй, latest, найди в интернете', desc: 'Multi-source поиск: WebSearch + WebFetch + context7 → синтез с цитатами и retrieval-датами.' },
+    ],
+  },
+  Хуки: {
+    icon: Hammer,
+    items: [
+      { name: 'nfs_guard.py',         triggers: 'PreToolUse(Write|Edit|Bash)', desc: 'Блокирует записи в любые пути из $HARNESS_BANNED_PATHS (NFS-квоты, MLSpace).' },
+      { name: 'secret_guard.py',      triggers: 'PreToolUse(Write|Edit|Bash)', desc: '12 классов секретов: OpenAI, Anthropic, HF, GitHub PAT, AWS, GCP, Slack, Stripe, W&B, PEM, JWT, DB-strings.' },
+      { name: 'validate_python.py',   triggers: 'PostToolUse(Write|Edit) на .py', desc: 'AST + py_compile + ruff F-rules. Block при undefined name / local-before-assignment / redefinition.' },
+      { name: 'auto_save_skill.py',   triggers: 'PostToolUse(*) + Stop',         desc: 'Whitelist tools, ≥3 повторов, ≥3 уникальных, bash-сигнал → черновик skill.' },
+      { name: 'auto_fix_suggest.py',  triggers: 'PostToolUse(Bash)',             desc: 'pytest/ruff/mypy ошибка → grep recipes/ по regex pattern → инжект подсказки в stderr.' },
+      { name: 'statusline.sh',        triggers: 'statusLine',                    desc: '[Model] cwd | GPU% | py-procs.' },
+    ],
+  },
+  Скиллы: {
+    icon: BookOpen,
+    items: [
+      { name: 'curated/ — 46',        triggers: 'отобранные',  desc: 'workflow (TDD, brainstorming, smart-grep), evals, gstack-debug, prism-анализ, secret-guard, self-improve, record-recipe, latex-writing, data-viz, diagrams, web-research, verify-claim.' },
+      { name: 'ported/ — 53',         triggers: 'импортированные', desc: 'HuggingFace стек, axolotl/unsloth/TRL, vLLM, llama.cpp, lm-evaluation-harness, code-review, github-workflow, arxiv, dspy, outlines, spike, subagent-driven-development.' },
+      { name: 'auto/ — растёт сам',   triggers: 'захват паттернов', desc: 'Когда auto_save_skill ловит устойчивую тройку tool-вызовов (≥3 повторов) — кладёт черновик. Промоутится в curated через self-improve.' },
+    ],
+  },
+  Команды: {
+    icon: Terminal,
+    items: [
+      { name: 'Код (5)',         triggers: '/lint /format /typecheck /pytest /coverage', desc: 'Быстрая проверка перед коммитом.' },
+      { name: 'Окружение (5)',   triggers: '/env /gpu /procs /diskcfs /hf-cache',         desc: 'Conda env, GPU, процессы, кеш HF.' },
+      { name: 'Состояние (7)',   triggers: '/git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp', desc: 'Снимок репо и долгоиграющих процессов.' },
+    ],
+  },
+  MCP: {
+    icon: Network,
+    items: [
+      { name: 'filesystem',  triggers: 'fs-операции',                desc: 'Низкоуровневые файловые операции через JSON-RPC, scoped к workspace.' },
+      { name: 'github',      triggers: 'Issues / PR',                desc: 'Работа с GitHub. Нужен GITHUB_TOKEN в env.' },
+      { name: 'tmux',        triggers: 'управление сессиями',        desc: 'Создание/убийство tmux-сессий для долгих процессов.' },
+      { name: 'context7',    triggers: 'свежая документация',        desc: 'Актуальные docs библиотек — обходит обучающий cutoff Claude.' },
+    ],
+  },
+  Память: {
+    icon: Database,
+    items: [
+      { name: 'MEMORY.md',     triggers: 'индекс',                     desc: 'Одна строка-ссылка на каждую запись (рецепт / решение / ошибка / стиль).' },
+      { name: 'recipes/',      triggers: 'паттерны фиксов',            desc: 'YAML-frontmatter с regex pattern: → используется auto_fix_suggest hook.' },
+      { name: 'decisions/',    triggers: 'архитектура',                desc: 'Что было решено и почему. Сохраняется руками или skill\'ом record-recipe.' },
+      { name: 'gotchas/',      triggers: 'чего избегать',              desc: 'Что не работает, какие подводные камни.' },
+      { name: 'style/',        triggers: 'предпочтения',               desc: 'Личные коды-конвенции и preferences.' },
+    ],
+  },
+};
+
+function Inside() {
+  const tabs = Object.keys(INSIDE_DATA);
+  const [active, setActive] = useState(tabs[0]);
+  const data = INSIDE_DATA[active];
+  return e('section', { id: 'inside', className: 'py-24 border-t border-white/5' },
+    e('div', { className: 'max-w-6xl mx-auto px-6' },
+      e(FadeIn, null,
+        e('div', { className: 'text-center mb-12' },
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
+            e(Layers, { className: 'w-3.5 h-3.5' }), 'Что внутри'
+          ),
+          e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
+            'Шесть слоёв ',
+            e('span', { className: 'text-gradient' }, 'переносимой среды')
+          ),
+          e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
+            'Всё в .claude/. Один git pull — и среда обновляется. Один rm -rf .claude/ — и вы вернулись к голому Claude Code.'
+          )
+        )
+      ),
+      // tabs
+      e(FadeIn, { delay: 0.1 },
+        e('div', { className: 'flex flex-wrap justify-center gap-2 mb-10' },
+          ...tabs.map(t =>
+            e('button', {
+              key: t,
+              onClick: () => setActive(t),
+              className: `px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 ${
+                active === t
+                  ? 'bg-accent-400 text-slate-950 shadow-lg shadow-accent-500/20'
+                  : 'border border-white/10 hover:bg-white/5'
+              }`
+            },
+              e(INSIDE_DATA[t].icon, { className: 'w-4 h-4' }),
+              t,
+            )
+          )
+        )
+      ),
+      // content
+      e(AnimatePresence, { mode: 'wait' },
+        e(motion.div, {
+          key: active,
+          initial: { opacity: 0, y: 12 },
+          animate: { opacity: 1, y: 0 },
+          exit:    { opacity: 0, y: -12 },
+          transition: { duration: 0.3 },
+          className: 'grid md:grid-cols-2 gap-4'
+        },
+          ...data.items.map((it, i) =>
+            e('div', {
+              key: i,
+              className: 'p-5 rounded-xl border border-white/10 bg-white/[0.02] card-hover'
+            },
+              e('div', { className: 'flex items-start justify-between gap-3 mb-2' },
+                e('div', { className: 'font-mono text-accent-400 font-semibold text-sm' }, it.name),
+                e('div', { className: 'text-xs text-slate-500 font-mono text-right max-w-[60%]' }, it.triggers),
+              ),
+              e('p', { className: 'text-sm text-slate-300 leading-relaxed' }, it.desc),
+            )
+          )
+        )
+      ),
+    )
+  );
+}
+
+// — Install ----------------------------------------------------------------
+function Install() {
+  const oneLine = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  const localCmd = `git clone https://github.com/yanochka11/harness_bro.git\ncd harness_bro\n./install.sh`;
+  const proxyCmd = `export HTTPS_PROXY="http://USER:PASSWORD@HOST:PORT"\nexport HTTP_PROXY="$HTTPS_PROXY"\nexport NO_PROXY="localhost,127.0.0.1"\ncurl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+
+  const Block = ({ title, cmd, desc }) =>
+    e('div', { className: 'glass rounded-xl overflow-hidden' },
+      e('div', { className: 'flex items-center justify-between px-4 py-2.5 border-b border-white/5' },
+        e('div', { className: 'text-sm font-medium' }, title),
+        e(CopyButton, { text: cmd })
+      ),
+      e('pre', { className: 'p-4 font-mono text-sm overflow-x-auto leading-relaxed' },
+        e('code', { className: 'text-slate-300' }, cmd)
+      ),
+      desc && e('div', { className: 'px-4 py-2.5 text-xs text-slate-500 border-t border-white/5 bg-black/20' }, desc)
+    );
+
+  return e('section', { id: 'install', className: 'py-24 border-t border-white/5' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeIn, null,
+        e('div', { className: 'text-center mb-12' },
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
+            e(Rocket, { className: 'w-3.5 h-3.5' }), 'Установка'
+          ),
+          e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
+            'Готово за ',
+            e('span', { className: 'text-gradient' }, '30 секунд')
+          ),
+          e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
+            'Скрипт сам проверит зависимости, склонирует репо во временную папку, развернёт config, прокинет proxy. Идемпотентный — можно перезапускать.'
+          )
+        )
+      ),
+      e('div', { className: 'space-y-6' },
+        e(FadeIn, { delay: 0.1 },
+          e(Block, {
+            title: '1. Одной командой (рекомендуется)',
+            cmd: oneLine,
+            desc: 'Поставит в $HOME/harness. Поменять путь: bash -s -- --target /opt/harness --yes'
+          })
+        ),
+        e(FadeIn, { delay: 0.15 },
+          e(Block, {
+            title: '2. Через клон (если хотите изучить установщик)',
+            cmd: localCmd,
+            desc: 'Установщик зададёт 2 вопроса: куда поставить и ставить ли ruff/mypy/pytest.'
+          })
+        ),
+        e(FadeIn, { delay: 0.2 },
+          e(Block, {
+            title: '3. На MLSpace или за корпоративным proxy',
+            cmd: proxyCmd,
+            desc: 'Proxy нужно получить у админа. Установщик автоматически подхватит env vars + пробросит в npm config.'
+          })
+        ),
+        e(FadeIn, { delay: 0.25 },
+          e('div', { className: 'p-5 rounded-xl border border-accent-400/20 bg-accent-400/5' },
+            e('div', { className: 'flex items-start gap-3' },
+              e(Eye, { className: 'w-5 h-5 text-accent-400 flex-shrink-0 mt-0.5' }),
+              e('div', null,
+                e('div', { className: 'font-semibold mb-1' }, 'Проверьте после установки'),
+                e('p', { className: 'text-sm text-slate-300 mb-3' },
+                  'Что-то должно быть на месте:'
+                ),
+                e('div', { className: 'glass rounded-lg p-3 font-mono text-sm' },
+                  e('span', { className: 'text-accent-400' }, '$ '),
+                  'ls ~/harness/.claude/   # agents commands hooks skills memory'
+                ),
+                e('p', { className: 'text-xs text-slate-500 mt-2' },
+                  'И запускайте: cd ~/harness && claude'
+                )
+              )
+            )
+          )
+        ),
+      )
+    )
+  );
+}
+
+// — Triggers table ---------------------------------------------------------
+function Triggers() {
+  const rows = [
+    ['«напиши / реализуй / рефактор»',      'code-writer',     'subagent'],
+    ['«падает / traceback / OOM»',          'bug-hunter',      'subagent'],
+    ['«запусти / обучи / evaluate»',        'runner',          'subagent'],
+    ['«прочитай статью / arxiv 2401.x»',    'paper-reader',    'subagent'],
+    ['«исследуй / найди в интернете»',      'researcher',      'subagent'],
+    ['«коммит / push»',                     'secret-guard',    'skill+hook'],
+    ['«запомни этот рецепт»',               'record-recipe',   'skill'],
+    ['«оптимизируй setup»',                 'self-improve',    'skill'],
+    ['«нарисуй график / matplotlib»',       'data-viz',        'skill'],
+    ['«нарисуй схему / mermaid»',           'diagrams',        'skill'],
+    ['«статья в латех / overleaf»',         'latex-writing',   'skill'],
+    ['«latest version / какая версия»',     'verify-claim',    'skill'],
+    ['«найди где X / callers Y»',           'smart-grep',      'skill'],
+  ];
+  return e('section', { id: 'triggers', className: 'py-24 border-t border-white/5' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeIn, null,
+        e('div', { className: 'text-center mb-12' },
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
+            e(Wand2, { className: 'w-3.5 h-3.5' }), 'Триггерные фразы'
+          ),
+          e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
+            'Просто ',
+            e('span', { className: 'text-gradient' }, 'говорите Claude')
+          ),
+          e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
+            'Никаких Task(subagent_type=...). Среда сама поднимает нужного специалиста по словам в вашем сообщении.'
+          )
+        )
+      ),
+      e(FadeIn, { delay: 0.1 },
+        e('div', { className: 'glass rounded-2xl overflow-hidden' },
+          e('table', { className: 'w-full' },
+            e('thead', { className: 'border-b border-white/10 bg-white/5' },
+              e('tr', null,
+                e('th', { className: 'text-left text-xs font-medium uppercase tracking-wider text-slate-500 px-5 py-3' }, 'Скажете'),
+                e('th', { className: 'text-left text-xs font-medium uppercase tracking-wider text-slate-500 px-5 py-3' }, 'Сработает'),
+                e('th', { className: 'text-left text-xs font-medium uppercase tracking-wider text-slate-500 px-5 py-3 hidden md:table-cell' }, 'Тип'),
+              )
+            ),
+            e('tbody', null,
+              ...rows.map((r, i) =>
+                e('tr', { key: i, className: 'border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition' },
+                  e('td', { className: 'px-5 py-3 text-sm text-slate-200' }, r[0]),
+                  e('td', { className: 'px-5 py-3 text-sm font-mono text-accent-400' }, r[1]),
+                  e('td', { className: 'px-5 py-3 text-xs text-slate-500 hidden md:table-cell' },
+                    e('span', { className: 'px-2 py-0.5 rounded-md bg-white/5 border border-white/10' }, r[2])
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// — Final CTA --------------------------------------------------------------
+function CTA() {
+  const oneLine = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  return e('section', { className: 'py-32 relative overflow-hidden border-t border-white/5' },
+    e('div', { className: 'absolute inset-0 grid-pattern opacity-30 pointer-events-none' }),
+    e('div', { className: 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-accent-500/15 blur-[120px] rounded-full pointer-events-none' }),
+    e('div', { className: 'relative max-w-4xl mx-auto px-6 text-center' },
+      e(FadeIn, null,
+        e('h2', { className: 'text-4xl md:text-6xl font-bold tracking-tight mb-6' },
+          'Нет смысла ',
+          e('span', { className: 'text-gradient' }, 'настраивать с нуля')
+        ),
+        e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto mb-10' },
+          'Поставьте сейчас. Если не понравится — `rm -rf ~/harness` и вернётесь к голому Claude Code.'
+        ),
+        e('div', { className: 'glass rounded-xl p-1 max-w-2xl mx-auto mb-6 glow' },
+          e('div', { className: 'flex items-center gap-3 px-4 py-3' },
+            e('span', { className: 'text-accent-400 font-mono text-base flex-shrink-0' }, '$'),
+            e('code', { className: 'flex-1 text-left font-mono text-sm overflow-x-auto whitespace-nowrap text-slate-200' }, oneLine.slice(0, oneLine.length)),
+            e(CopyButton, { text: oneLine })
+          )
+        ),
+        e('div', { className: 'flex flex-wrap items-center justify-center gap-3 text-sm text-slate-500' },
+          e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener', className: 'flex items-center gap-1.5 hover:text-white transition' },
+            e(Github, { className: 'w-4 h-4' }), 'yanochka11/harness_bro'
+          ),
+          e('span', null, '·'),
+          e('span', null, 'MIT'),
+          e('span', null, '·'),
+          e('span', null, 'Linux / macOS / WSL2')
+        )
+      )
+    )
+  );
+}
+
+// — Footer -----------------------------------------------------------------
+function Footer() {
+  return e('footer', { className: 'border-t border-white/5 py-12' },
+    e('div', { className: 'max-w-6xl mx-auto px-6' },
+      e('div', { className: 'flex flex-col md:flex-row items-center justify-between gap-6' },
+        e('div', { className: 'flex items-center gap-2.5' },
+          e('div', { className: 'w-7 h-7 rounded-lg bg-gradient-to-br from-accent-400 to-indigo-500 flex items-center justify-center' },
+            e(Terminal, { className: 'w-4 h-4 text-slate-950' })
+          ),
+          e('div', null,
+            e('div', { className: 'font-mono font-semibold text-sm' }, 'harness_bro'),
+            e('div', { className: 'text-xs text-slate-500' }, 'Готовая среда Claude Code · MIT')
+          )
+        ),
+        e('div', { className: 'flex items-center gap-6 text-sm text-slate-400' },
+          e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener', className: 'hover:text-white transition flex items-center gap-1.5' },
+            e(Github, { className: 'w-4 h-4' }), 'GitHub'
+          ),
+          e('a', { href: '#install',  className: 'hover:text-white transition' }, 'Установка'),
+          e('a', { href: '#features', className: 'hover:text-white transition' }, 'Фишки'),
+        )
+      ),
+      e('div', { className: 'mt-8 pt-6 border-t border-white/5 text-center text-xs text-slate-600' },
+        'Built on top of ',
+        e('a', { href: 'https://claude.ai/code', target: '_blank', rel: 'noopener', className: 'hover:text-slate-400 transition' }, 'Claude Code'),
+        ' by Anthropic. Skills imported from obra/superpowers, anthropics/skills, NousResearch/Hermes, getsentry, gstack.'
+      )
+    )
+  );
+}
+
+// — App --------------------------------------------------------------------
+function App() {
+  return e(React.Fragment, null,
+    e(Nav),
+    e(Hero),
+    e(Stats),
+    e(Features),
+    e(Inside),
+    e(Install),
+    e(Triggers),
+    e(CTA),
+    e(Footer),
+  );
+}
+
+createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>
