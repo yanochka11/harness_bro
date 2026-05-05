@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>harness_bro — конфигурация .claude/ для Claude Code</title>
+<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap и поддержкой proxy." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'SF Mono', 'monospace'],
+        },
+        colors: {
+          ink: {
+            0:   '#08080a',
+            50:  '#0d0d10',
+            100: '#13131a',
+            200: '#1a1a22',
+            300: '#23232b',
+            400: '#3a3a44',
+            500: '#5b5b66',
+            600: '#8b8b94',
+            700: '#a8a8b0',
+            800: '#d4d4d8',
+            900: '#fafafa',
+          },
+          accent: '#a3e635',
+        },
+        letterSpacing: {
+          tightest: '-0.04em',
+          tighter:  '-0.02em',
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  body {
+    background: #08080a;
+    color: #d4d4d8;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+  ::selection { background: rgba(163,230,53,0.25); color: #fff; }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 800px 400px at 50% 0%, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 800px 400px at 50% 0%, black, transparent 70%);
+  }
+
+  .border-soft { border-color: #1a1a22; }
+
+  .link-underline {
+    position: relative;
+    display: inline-block;
+  }
+  .link-underline::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -2px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+  }
+  .link-underline:hover::after { opacity: 1; }
+
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+
+  /* hide scrollbar но keep scroll */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+<div id="root"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "react":            "https://esm.sh/react@18.3.1",
+    "react-dom":        "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "framer-motion":    "https://esm.sh/framer-motion@11.11.17?deps=react@18.3.1"
+  }
+}
+</script>
+
+<script type="module">
+import React, { useState, useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
+
+const e = React.createElement;
+const GITHUB_URL = 'https://github.com/yanochka11/harness_bro';
+
+// ─── helpers ──────────────────────────────────────────────────────
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  return e('button', {
+    onClick: async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1800);
+      } catch {}
+    },
+    className: 'font-mono text-xs text-ink-600 hover:text-ink-900 transition-colors px-2 py-1',
+    'aria-label': 'copy',
+  }, copied ? 'copied' : 'copy');
+}
+
+function FadeUp({ children, delay = 0, y = 12 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-80px' });
+  return e(motion.div, {
+    ref,
+    initial: { opacity: 0, y },
+    animate: inView ? { opacity: 1, y: 0 } : {},
+    transition: { duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] },
+  }, children);
+}
+
+// ─── Nav ──────────────────────────────────────────────────────────
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', h);
+    return () => window.removeEventListener('scroll', h);
+  }, []);
+  return e('nav', {
+    className: `fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
+      scrolled ? 'bg-ink-0/85 backdrop-blur border-b border-soft' : ''
+    }`
+  },
+    e('div', { className: 'max-w-5xl mx-auto px-6 h-14 flex items-center justify-between' },
+      e('a', { href: '#top', className: 'font-mono text-sm font-semibold text-ink-900 tracking-tight' },
+        'harness_bro'
+      ),
+      e('div', { className: 'hidden md:flex items-center gap-8 text-sm text-ink-600' },
+        e('a', { href: '#install',  className: 'hover:text-ink-900 transition-colors' }, 'Установка'),
+        e('a', { href: '#features', className: 'hover:text-ink-900 transition-colors' }, 'Свойства'),
+        e('a', { href: '#inside',   className: 'hover:text-ink-900 transition-colors' }, 'Что внутри'),
+        e('a', { href: '#triggers', className: 'hover:text-ink-900 transition-colors' }, 'Триггеры'),
+      ),
+      e('a', {
+        href: GITHUB_URL,
+        target: '_blank',
+        rel: 'noopener',
+        className: 'text-sm text-ink-700 hover:text-ink-900 transition-colors link-underline',
+      }, 'GitHub →'),
+    )
+  );
+}
+
+// ─── Hero ─────────────────────────────────────────────────────────
+function Hero() {
+  const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  return e('section', { id: 'top', className: 'relative pt-40 pb-32 overflow-hidden' },
+    e('div', { className: 'absolute inset-0 grid-bg pointer-events-none' }),
+    e('div', { className: 'relative max-w-5xl mx-auto px-6' },
+
+      e(motion.div, {
+        initial: { opacity: 0, y: 8 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
+        className: 'font-mono text-xs text-ink-500 tracking-wider mb-8 uppercase'
+      },
+        'v1.0  ·  MIT  ·  Linux  ·  macOS  ·  WSL2'
+      ),
+
+      e(motion.h1, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] },
+        className: 'font-mono text-5xl md:text-7xl font-semibold text-ink-900 tracking-tightest leading-[1.0] mb-8'
+      },
+        'harness_bro'
+      ),
+
+      e(motion.p, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.2 },
+        className: 'text-xl md:text-2xl text-ink-700 leading-snug max-w-3xl mb-3 tracking-tight'
+      },
+        'Конфигурация ', e('code', { className: 'font-mono text-ink-900' }, '.claude/'),
+        ' для Claude Code, заточенная под ML/AI-разработку.'
+      ),
+      e(motion.p, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.25 },
+        className: 'text-base text-ink-600 max-w-2xl mb-12 leading-relaxed'
+      },
+        'Хуки, скиллы, субагенты, MCP-серверы и постоянная память — собранные в один установщик. Один command, переносимая на любую Linux/macOS машину.'
+      ),
+
+      e(motion.div, {
+        initial: { opacity: 0, y: 16 },
+        animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.3 },
+        className: 'border border-soft rounded-md bg-ink-50 max-w-3xl'
+      },
+        e('div', { className: 'flex items-center justify-between border-b border-soft px-4 py-2' },
+          e('span', { className: 'font-mono text-xs text-ink-500' }, '$ install'),
+          e(CopyButton, { text: cmd }),
+        ),
+        e('div', { className: 'p-4 font-mono text-sm overflow-x-auto no-scrollbar text-ink-800 leading-relaxed' },
+          e('span', { className: 'text-ink-500' }, '$ '),
+          'curl -fsSL ',
+          e('span', { className: 'text-ink-700' }, 'https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh'),
+          ' | bash'
+        ),
+      ),
+
+      e(motion.div, {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        transition: { duration: 0.8, delay: 0.4 },
+        className: 'mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-600'
+      },
+        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener', className: 'link-underline hover:text-ink-900 transition-colors' },
+          'github.com/yanochka11/harness_bro →'
+        ),
+        e('span', { className: 'text-ink-400' }, '·'),
+        e('a', { href: '#install', className: 'link-underline hover:text-ink-900 transition-colors' },
+          'Подробнее об установке ↓'
+        ),
+      ),
+    )
+  );
+}
+
+// ─── Stats line ───────────────────────────────────────────────────
+function StatsLine() {
+  const stats = [
+    ['99', 'скиллов'],
+    ['6',  'хуков'],
+    ['5',  'субагентов'],
+    ['18', 'команд'],
+    ['4',  'MCP-серверов'],
+    ['43', 'разрешений в allow-list'],
+  ];
+  return e('section', { className: 'border-y border-soft' },
+    e('div', { className: 'max-w-5xl mx-auto px-6 py-10' },
+      e(FadeUp, null,
+        e('div', { className: 'flex flex-wrap items-baseline gap-x-10 gap-y-4' },
+          ...stats.map(([n, label], i) =>
+            e('div', { key: i, className: 'flex items-baseline gap-2' },
+              e('span', { className: 'font-mono text-2xl text-ink-900 font-semibold tracking-tight' }, n),
+              e('span', { className: 'text-sm text-ink-600' }, label),
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Features (numbered) ──────────────────────────────────────────
+const FEATURES = [
+  {
+    title: 'Защита от утечки секретов',
+    text: 'Хук secret_guard блокирует Write/Edit и git commit/push/add при обнаружении ключей OpenAI, Anthropic, HuggingFace, GitHub, AWS, GCP, Slack, Stripe, W&B, JWT, PEM или паролей в DB-strings.',
+  },
+  {
+    title: 'Постоянная память между сессиями',
+    text: 'Recipe-файлы с regex-паттернами в .claude/memory/. После успешного фикса вы говорите «запомни» — auto_fix_suggest hook найдёт и подскажет рецепт при повторе той же ошибки.',
+  },
+  {
+    title: 'Триггеры на естественном языке',
+    text: 'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение пользователя с описаниями и активирует подходящий компонент.',
+  },
+  {
+    title: 'Anti-hallucination protocol',
+    text: 'Скиллы verify-claim и web-research срабатывают на «latest», «какая версия», «best practices» и заставляют проверить факт через WebFetch / context7 до утверждения.',
+  },
+  {
+    title: 'Авто-фикс цикл',
+    text: 'pytest/ruff/mypy упало → auto_fix_suggest читает stderr → grep recipes/ по regex → matching рецепт инжектится Claude → фикс применяется. Со 2-го раза одна ошибка решается за 0 токенов.',
+  },
+  {
+    title: 'AST-валидация Python',
+    text: 'После Write/Edit на .py — AST + py_compile + ruff F-rules (F821 undefined name, F823 local-before-assignment, F811 redefinition). Сломанный код блокируется на месте.',
+  },
+  {
+    title: 'Самообучение из паттернов',
+    text: 'auto_save_skill следит за tool-вызовами. Устойчивая последовательность ≥ 3 повторов с фильтром шума → черновик скилла. Скилл self-improve проводит мета-аудит и предлагает повышать в основной набор.',
+  },
+  {
+    title: 'Долгие процессы только в фоне',
+    text: 'Субагент runner запускает обучения и эвалуации через nohup с tee в runs/<task>/<ts>/run.log. Чат не блокируется. Мониторинг через pgrep, tail, nvidia-smi.',
+  },
+  {
+    title: 'Поддержка MLSpace и proxy',
+    text: 'install.sh находит HTTPS_PROXY, маскирует пароль в логах, прокидывает в npm config, проверяет доступность github.com. Установка одной командой работает за корпоративным прокси.',
+  },
+  {
+    title: 'Минимум подтверждений',
+    text: '43 read-only команды в permissions.allow + defaultMode auto + skipAutoPermissionPrompt — типичные cat / ls / git status / pytest выполняются без явного подтверждения.',
+  },
+];
+
+function Features() {
+  return e('section', { id: 'features', className: 'py-32' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className: 'mb-20 max-w-2xl' },
+          e('div', { className: 'font-mono text-xs text-ink-500 tracking-wider mb-3 uppercase' }, 'Свойства'),
+          e('h2', { className: 'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight' },
+            'Что делает среда'
+          ),
+        )
+      ),
+      e('div', { className: 'grid md:grid-cols-2 gap-x-10 gap-y-12' },
+        ...FEATURES.map((f, i) =>
+          e(FadeUp, { key: i, delay: (i % 2) * 0.05 },
+            e('div', { className: 'flex gap-5' },
+              e('div', { className: 'font-mono text-xs text-ink-500 pt-1 flex-shrink-0 w-8' },
+                String(i + 1).padStart(2, '0')
+              ),
+              e('div', { className: 'flex-1' },
+                e('h3', { className: 'text-base font-semibold text-ink-900 mb-2 tracking-tight' }, f.title),
+                e('p', { className: 'text-sm text-ink-600 leading-relaxed' }, f.text),
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Inside (file tree style) ────────────────────────────────────
+function Inside() {
+  const rows = [
+    { name: 'agents/',    n: '5',  desc: 'bug-hunter · code-writer · runner · paper-reader · researcher' },
+    { name: 'hooks/',     n: '6',  desc: 'nfs_guard · secret_guard · validate_python · auto_save_skill · auto_fix_suggest · statusline' },
+    { name: 'commands/',  n: '18', desc: '/lint /format /typecheck /pytest /coverage /tex-build · /env /gpu /procs /diskcfs /hf-cache · /git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp' },
+    { name: 'skills/',    n: '99', desc: '46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, lm-eval-harness, code-review, github-flow, arxiv, latex, data-viz, diagrams, dspy, outlines)' },
+    { name: '.mcp.json',  n: '4',  desc: 'filesystem · github · tmux · context7 (свежая дока библиотек)' },
+    { name: 'memory/',    n: '',   desc: 'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
+  ];
+  return e('section', { id: 'inside', className: 'border-t border-soft py-32' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className: 'mb-16 max-w-2xl' },
+          e('div', { className: 'font-mono text-xs text-ink-500 tracking-wider mb-3 uppercase' }, 'Структура'),
+          e('h2', { className: 'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Содержимое .claude/'
+          ),
+          e('p', { className: 'text-base text-ink-600 leading-relaxed' },
+            'Вся конфигурация в одной директории. Удаляется через ', e('code', { className: 'font-mono text-ink-800' }, 'rm -rf .claude/'), ', обновляется через ', e('code', { className: 'font-mono text-ink-800' }, 'git pull'), '.'
+          ),
+        )
+      ),
+      e(FadeUp, { delay: 0.1 },
+        e('div', { className: 'border border-soft rounded-md bg-ink-50/50 overflow-hidden' },
+          e('div', { className: 'border-b border-soft px-4 py-2 flex items-center justify-between' },
+            e('span', { className: 'font-mono text-xs text-ink-500' }, '~/harness/.claude/'),
+            e('span', { className: 'font-mono text-xs text-ink-500' }, 'tree')
+          ),
+          e('div', { className: 'divide-y divide-ink-100' },
+            ...rows.map((r, i) =>
+              e('div', { key: i, className: 'grid grid-cols-12 gap-4 px-4 py-4 hover:bg-ink-100/40 transition-colors' },
+                e('div', { className: 'col-span-3 md:col-span-2 font-mono text-sm text-ink-900 font-medium' }, r.name),
+                e('div', { className: 'col-span-2 md:col-span-1 font-mono text-sm text-ink-500 text-right md:text-left' }, r.n),
+                e('div', { className: 'col-span-7 md:col-span-9 text-sm text-ink-700 leading-relaxed' }, r.desc),
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Install ─────────────────────────────────────────────────────
+function Install() {
+  const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  const post = `cd ~/harness        # workspace, где лежит .claude/
+claude              # интерактивная TUI-сессия Claude Code`;
+  const proxy = `export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
+export HTTP_PROXY="$HTTPS_PROXY"
+export NO_PROXY="localhost,127.0.0.1"
+
+curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+
+  const Block = ({ title, body, cmd, comment }) =>
+    e('div', { className: 'mb-10' },
+      e('div', { className: 'flex items-center justify-between mb-3' },
+        e('h3', { className: 'font-mono text-xs text-ink-500 tracking-wider uppercase' }, title),
+        cmd && e(CopyButton, { text: cmd }),
+      ),
+      body && e('p', { className: 'text-sm text-ink-700 leading-relaxed mb-3 max-w-2xl' }, body),
+      cmd && e('div', { className: 'border border-soft rounded-md bg-ink-50' },
+        e('pre', { className: 'p-4 font-mono text-sm overflow-x-auto no-scrollbar text-ink-800 leading-relaxed' },
+          e('code', null, cmd)
+        )
+      ),
+      comment && e('p', { className: 'text-xs text-ink-500 mt-2 leading-relaxed' }, comment),
+    );
+
+  return e('section', { id: 'install', className: 'border-t border-soft py-32' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className: 'mb-16 max-w-2xl' },
+          e('div', { className: 'font-mono text-xs text-ink-500 tracking-wider mb-3 uppercase' }, 'install.sh'),
+          e('h2', { className: 'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Установка'
+          ),
+          e('p', { className: 'text-base text-ink-600 leading-relaxed' },
+            'Скрипт проверяет зависимости (', e('code', { className: 'font-mono text-ink-800' }, 'python ≥ 3.10'), ', ', e('code', { className: 'font-mono text-ink-800' }, 'node'), ', ', e('code', { className: 'font-mono text-ink-800' }, 'npm'), ', ', e('code', { className: 'font-mono text-ink-800' }, 'git'), '), клонирует репо, разворачивает .claude/ в целевую папку, рендерит CLAUDE.md и .mcp.json из шаблонов с подстановкой пути.'
+          ),
+        )
+      ),
+
+      e(FadeUp, { delay: 0.1 },
+        e(Block, { title: '1 · Установить', cmd, comment: 'Идемпотентный — можно перезапускать. Существующие файлы автобэкапятся в *.bak.' })
+      ),
+      e(FadeUp, { delay: 0.15 },
+        e(Block, {
+          title: '2 · Запустить',
+          body: 'cd в созданный workspace и запустить Claude Code. Откроется интерактивная TUI-сессия в терминале.',
+          cmd: post,
+          comment: 'Внутри сессии: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос Claude. Выход: Ctrl+D или /exit.',
+        })
+      ),
+      e(FadeUp, { delay: 0.2 },
+        e(Block, {
+          title: '3 · MLSpace / прокси',
+          body: 'На MLSpace и закрытых серверах сначала экспортируйте HTTPS_PROXY. Установщик подхватит, замаскирует пароль в логах, прокинет в npm config.',
+          cmd: proxy,
+          comment: 'Пароль не вставлять в код или git. Только в env vars или ~/.netrc.',
+        })
+      ),
+    )
+  );
+}
+
+// ─── Triggers ────────────────────────────────────────────────────
+function Triggers() {
+  const rows = [
+    ['напиши · реализуй · рефактор',     'code-writer'],
+    ['падает · traceback · OOM',         'bug-hunter'],
+    ['запусти · обучи · evaluate',       'runner'],
+    ['прочитай статью · arxiv',          'paper-reader'],
+    ['исследуй · latest · какая версия', 'researcher · verify-claim'],
+    ['коммит · push',                    'secret-guard + хук'],
+    ['запомни этот рецепт',              'record-recipe'],
+    ['оптимизируй setup',                'self-improve'],
+    ['нарисуй график · matplotlib',      'data-viz'],
+    ['нарисуй схему · mermaid',          'diagrams'],
+    ['статья в латех · overleaf',        'latex-writing'],
+    ['найди где X · callers Y',          'smart-grep'],
+  ];
+  return e('section', { id: 'triggers', className: 'border-t border-soft py-32' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className: 'mb-16 max-w-2xl' },
+          e('div', { className: 'font-mono text-xs text-ink-500 tracking-wider mb-3 uppercase' }, 'Активация'),
+          e('h2', { className: 'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Триггерные фразы'
+          ),
+          e('p', { className: 'text-base text-ink-600 leading-relaxed' },
+            'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение пользователя с описаниями и активирует подходящий компонент. Ручной вызов через ', e('code', { className: 'font-mono text-ink-800' }, 'Task(subagent_type=…)'), ' не нужен.'
+          ),
+        )
+      ),
+      e(FadeUp, { delay: 0.1 },
+        e('div', { className: 'border border-soft rounded-md bg-ink-50/50 overflow-hidden' },
+          e('table', { className: 'w-full' },
+            e('thead', null,
+              e('tr', { className: 'border-b border-soft' },
+                e('th', { className: 'text-left font-mono text-xs text-ink-500 tracking-wider uppercase font-medium px-4 py-3' }, 'Сообщение'),
+                e('th', { className: 'text-left font-mono text-xs text-ink-500 tracking-wider uppercase font-medium px-4 py-3' }, 'Активирует'),
+              )
+            ),
+            e('tbody', { className: 'divide-y divide-ink-100' },
+              ...rows.map(([msg, act], i) =>
+                e('tr', { key: i, className: 'hover:bg-ink-100/40 transition-colors' },
+                  e('td', { className: 'text-sm text-ink-800 px-4 py-3' }, msg),
+                  e('td', { className: 'text-sm font-mono text-ink-900 px-4 py-3' }, act),
+                )
+              )
+            )
+          )
+        )
+      ),
+
+      // auto-fix flow
+      e(FadeUp, { delay: 0.15 },
+        e('div', { className: 'mt-12 max-w-3xl' },
+          e('div', { className: 'font-mono text-xs text-ink-500 tracking-wider mb-3 uppercase' }, 'Цикл авто-фикса'),
+          e('div', { className: 'border border-soft rounded-md bg-ink-50 p-5 font-mono text-sm text-ink-700 leading-loose' },
+            e('div', null, 'тест/линтер падает  →  auto_fix_suggest читает stderr'),
+            e('div', { className: 'pl-[10ch]' }, '→  grep recipes/ по regex'),
+            e('div', { className: 'pl-[10ch]' }, '→  matching рецепт инжектится Claude'),
+            e('div', { className: 'pl-[10ch]' }, '→  фикс применяется'),
+            e('div', { className: 'mt-2' }, 'после фикса        →  «запомни» → record-recipe пишет файл'),
+            e('div', { className: 'pl-[19ch]' }, '→  ', e('span', { className: 'text-ink-900' }, 'следующий раз: 0 токенов на расследование')),
+          )
+        )
+      ),
+    )
+  );
+}
+
+// ─── Footer ──────────────────────────────────────────────────────
+function Footer() {
+  return e('footer', { className: 'border-t border-soft py-16' },
+    e('div', { className: 'max-w-5xl mx-auto px-6' },
+      e('div', { className: 'flex flex-col md:flex-row items-start md:items-end justify-between gap-8' },
+        e('div', null,
+          e('div', { className: 'font-mono text-sm font-semibold text-ink-900 mb-1' }, 'harness_bro'),
+          e('div', { className: 'text-sm text-ink-600 max-w-md leading-relaxed' },
+            'Конфигурация .claude/ для Claude Code. Открытый исходный код, MIT.'
+          ),
+        ),
+        e('div', { className: 'flex items-center gap-6 text-sm text-ink-600' },
+          e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener', className: 'link-underline hover:text-ink-900 transition-colors' }, 'GitHub'),
+          e('a', { href: '#install',  className: 'link-underline hover:text-ink-900 transition-colors' }, 'Установка'),
+          e('a', { href: '#features', className: 'link-underline hover:text-ink-900 transition-colors' }, 'Свойства'),
+        )
+      ),
+      e('div', { className: 'mt-12 pt-8 border-t border-soft text-xs text-ink-500 leading-relaxed' },
+        'Built on top of ',
+        e('a', { href: 'https://claude.ai/code', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'Claude Code'),
+        '. Skills imported from ',
+        e('a', { href: 'https://github.com/obra/superpowers', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'superpowers'),
+        ', ',
+        e('a', { href: 'https://github.com/anthropics/skills', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'anthropic-skills'),
+        ', ',
+        e('a', { href: 'https://github.com/NousResearch/hermes-agent', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'Hermes Agent'),
+        ', ',
+        e('a', { href: 'https://github.com/getsentry', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'sentry'),
+        ', ',
+        e('a', { href: 'https://github.com/getstack', target: '_blank', rel: 'noopener', className: 'hover:text-ink-700 transition-colors link-underline' }, 'gstack'),
+        '.'
+      )
+    )
+  );
+}
+
+// ─── App ─────────────────────────────────────────────────────────
+function App() {
+  return e(React.Fragment, null,
+    e(Nav),
+    e(Hero),
+    e(StatsLine),
+    e(Features),
+    e(Inside),
+    e(Install),
+    e(Triggers),
+    e(Footer),
+  );
+}
+
+createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>
