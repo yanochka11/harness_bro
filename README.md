@@ -22,9 +22,25 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
 
 Установщик проверяет зависимости (`python ≥ 3.10`, `node`, `npm`, `git`), клонирует репозиторий во временную директорию, разворачивает `.claude/` в `~/harness`, рендерит `CLAUDE.md` и `.mcp.json` из шаблонов с подстановкой пути. Идемпотентный — можно перезапускать.
 
+### После установки
+
 ```bash
-cd ~/harness && claude
+cd ~/harness     # перейти в workspace (где лежит .claude/)
+claude           # запустить интерактивную сессию Claude Code
 ```
+
+`claude` откроет интерактивный TUI в терминале. Внутри:
+
+```
+> /env                  # показать окружение: conda, python, HF_HOME, токены, GPU
+> /gpu                  # снимок nvidia-smi
+> /git-status           # состояние репозитория, если есть
+> напиши hello.py       # claude поднимет subagent code-writer и напишет файл
+```
+
+Любая фраза вне slash-команд — это запрос Claude. Среда сама подберёт нужный субагент или скилл по триггерным словам (см. [Триггеры](#триггеры)).
+
+Выход: `Ctrl+D` или `/exit`. История сессии сохраняется в `~/harness/.claude/sessions/`.
 
 <details>
 <summary><b>Флаги установщика</b></summary>
