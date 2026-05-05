@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>harness_bro · готовая среда Claude Code для ML/AI</title>
-<meta name="description" content="Готовая обвязка над Claude Code: 6 хуков, 17 быстрых команд, 90+ скиллов, 5 субагентов, постоянная память, защита от утечек ключей. Установка одной командой." />
+<title>harness_bro — конфигурация .claude/ для Claude Code</title>
+<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, .claude/memory, .mcp.json. Установщик с self-bootstrap и поддержкой proxy." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -242,20 +242,18 @@ function Hero() {
         initial: { opacity: 0, y: 16 },
         animate: { opacity: 1, y: 0 },
         transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
-        className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-accent-400/30 bg-accent-400/10 text-xs font-medium text-accent-300'
+        className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-accent-400/30 bg-accent-400/10 text-xs font-medium text-accent-300 font-mono'
       },
-        e(Sparkles, { className: 'w-3.5 h-3.5' }),
-        'Готовая среда Claude Code · MIT'
+        'v1.0 · MIT · Linux / macOS / WSL2'
       ),
 
       e(motion.h1, {
         initial: { opacity: 0, y: 24 },
         animate: { opacity: 1, y: 0 },
         transition: { duration: 0.7, delay: 0.1 },
-        className: 'text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6'
+        className: 'text-5xl md:text-7xl font-bold tracking-tight leading-[1.05] mb-6 font-mono'
       },
-        e('span', { className: 'block' }, 'Claude Code,'),
-        e('span', { className: 'block text-gradient animate-gradient-x' }, 'заточенный под ML')
+        'harness_bro'
       ),
 
       e(motion.p, {
@@ -264,8 +262,7 @@ function Hero() {
         transition: { duration: 0.7, delay: 0.2 },
         className: 'text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed'
       },
-        '6 хуков, 17 быстрых команд, 90+ скиллов, 5 субагентов, постоянная память, защита от утечки ключей. ',
-        e('span', { className: 'text-slate-300' }, 'Установка одной командой.')
+        'Конфигурация .claude/ для Claude Code: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, постоянная память, защита от утечки ключей. Один установщик, переносимая на любую Linux/macOS машину.'
       ),
 
       // install command
@@ -306,8 +303,8 @@ function Hero() {
           href: '#install',
           className: 'inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-accent-400 hover:bg-accent-300 text-slate-950 font-semibold transition shadow-lg shadow-accent-500/20'
         },
-          e(Rocket, { className: 'w-4 h-4' }),
-          'Поставить за 30 секунд'
+          e(Terminal, { className: 'w-4 h-4' }),
+          'Установка'
         ),
         e('a', {
           href: GITHUB_URL,
@@ -316,7 +313,7 @@ function Hero() {
           className: 'inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-white/10 hover:bg-white/5 transition'
         },
           e(Github, { className: 'w-4 h-4' }),
-          'Исходники на GitHub',
+          'Исходники',
           e(ChevronRight, { className: 'w-4 h-4' })
         ),
       )
@@ -327,12 +324,12 @@ function Hero() {
 // — Stats bar --------------------------------------------------------------
 function Stats() {
   const stats = [
-    { n: 90, suffix: '+', label: 'скиллов', icon: BookOpen },
+    { n: 99, suffix: '',  label: 'скиллов', icon: BookOpen },
     { n: 6,  suffix: '',  label: 'хуков',   icon: Hammer },
     { n: 5,  suffix: '',  label: 'субагентов', icon: Users },
-    { n: 17, suffix: '',  label: 'команд',  icon: Terminal },
+    { n: 18, suffix: '',  label: 'быстрых команд', icon: Terminal },
     { n: 4,  suffix: '',  label: 'MCP-серверов', icon: Network },
-    { n: 99, suffix: '',  label: 'SKILL.md в репо', icon: Check },
+    { n: 43, suffix: '',  label: 'read-only allow', icon: Check },
   ];
   return e('section', { className: 'border-y border-white/5 bg-black/20 backdrop-blur' },
     e('div', { className: 'max-w-6xl mx-auto px-6 py-12' },
@@ -370,7 +367,7 @@ const FEATURES = [
   {
     icon: Users,
     title: '5 субагентов на триггерах',
-    text: 'Не нужно Task(subagent_type=...). По «напиши» поднимется code-writer, по «падает» — bug-hunter, по «запусти» — runner (фон + лог), по «arxiv» — paper-reader, по «исследуй» — researcher.',
+    text: 'Каждый субагент объявляет триггерные фразы в YAML-frontmatter: code-writer на «напиши/реализуй/рефактор», bug-hunter на «падает/traceback/OOM», runner на «запусти/обучи/evaluate», paper-reader на «прочитай статью/arxiv», researcher на «исследуй/latest/найди».',
     color: 'from-accent-400 to-emerald-400',
   },
   {
@@ -412,7 +409,7 @@ const FEATURES = [
   {
     icon: Bot,
     title: 'Минимум подтверждений',
-    text: '43 read-only команды в permissions.allow (rg, ls, cat, git status, nvidia-smi, pytest, ruff, mypy и др.) + defaultMode auto. Никакого спама с prompt’ом на каждый cat file.py.',
+    text: '43 read-only команды в permissions.allow (rg, ls, cat, git status, nvidia-smi, pytest, ruff, mypy и др.) + defaultMode auto + skipAutoPermissionPrompt — типичные read-only вызовы выполняются без явного подтверждения.',
     color: 'from-emerald-400 to-green-400',
   },
 ];
@@ -422,15 +419,14 @@ function Features() {
     e('div', { className: 'max-w-6xl mx-auto px-6' },
       e(FadeIn, null,
         e('div', { className: 'text-center mb-16' },
-          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
-            e(Sparkles, { className: 'w-3.5 h-3.5' }), '10 ключевых фишек'
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400 font-mono' },
+            'компоненты'
           ),
           e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
-            'Не просто конфиг. ',
-            e('span', { className: 'text-gradient' }, 'Целая среда.')
+            'Что делает среда'
           ),
           e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
-            'Каждая фишка решает реальную боль ML-разработки: утечка ключей в git, забывание решений, падающие тренировки, галлюцинации модели на свежих API.'
+            'Десять компонентов конфигурации с привязкой к конкретным сценариям ML-разработки.'
           )
         )
       ),
@@ -485,7 +481,7 @@ const INSIDE_DATA = {
   Команды: {
     icon: Terminal,
     items: [
-      { name: 'Код (5)',         triggers: '/lint /format /typecheck /pytest /coverage', desc: 'Быстрая проверка перед коммитом.' },
+      { name: 'Код (6)',         triggers: '/lint /format /typecheck /pytest /coverage /tex-build', desc: 'Быстрая проверка перед коммитом + сборка LaTeX.' },
       { name: 'Окружение (5)',   triggers: '/env /gpu /procs /diskcfs /hf-cache',         desc: 'Conda env, GPU, процессы, кеш HF.' },
       { name: 'Состояние (7)',   triggers: '/git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp', desc: 'Снимок репо и долгоиграющих процессов.' },
     ],
@@ -519,15 +515,14 @@ function Inside() {
     e('div', { className: 'max-w-6xl mx-auto px-6' },
       e(FadeIn, null,
         e('div', { className: 'text-center mb-12' },
-          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
-            e(Layers, { className: 'w-3.5 h-3.5' }), 'Что внутри'
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400 font-mono' },
+            'структура'
           ),
           e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
-            'Шесть слоёв ',
-            e('span', { className: 'text-gradient' }, 'переносимой среды')
+            'Структура .claude/'
           ),
           e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
-            'Всё в .claude/. Один git pull — и среда обновляется. Один rm -rf .claude/ — и вы вернулись к голому Claude Code.'
+            'Вся конфигурация в одной директории. Удаляется через rm -rf .claude/, обновляется через git pull.'
           )
         )
       ),
@@ -600,15 +595,14 @@ function Install() {
     e('div', { className: 'max-w-5xl mx-auto px-6' },
       e(FadeIn, null,
         e('div', { className: 'text-center mb-12' },
-          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
-            e(Rocket, { className: 'w-3.5 h-3.5' }), 'Установка'
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400 font-mono' },
+            'install.sh'
           ),
           e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
-            'Готово за ',
-            e('span', { className: 'text-gradient' }, '30 секунд')
+            'Установка'
           ),
           e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
-            'Скрипт сам проверит зависимости, склонирует репо во временную папку, развернёт config, прокинет proxy. Идемпотентный — можно перезапускать.'
+            'Скрипт проверяет зависимости (python ≥ 3.10, node, npm, git), клонирует репо во временную директорию, разворачивает .claude/ в целевую папку, рендерит CLAUDE.md и .mcp.json из шаблонов с подстановкой пути. Идемпотентный.'
           )
         )
       ),
@@ -680,15 +674,14 @@ function Triggers() {
     e('div', { className: 'max-w-5xl mx-auto px-6' },
       e(FadeIn, null,
         e('div', { className: 'text-center mb-12' },
-          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400' },
-            e(Wand2, { className: 'w-3.5 h-3.5' }), 'Триггерные фразы'
+          e('div', { className: 'inline-flex items-center gap-2 px-3 py-1 mb-4 rounded-full border border-white/10 bg-white/5 text-xs font-medium text-slate-400 font-mono' },
+            'triggers'
           ),
           e('h2', { className: 'text-4xl md:text-5xl font-bold tracking-tight mb-4' },
-            'Просто ',
-            e('span', { className: 'text-gradient' }, 'говорите Claude')
+            'Триггерные фразы'
           ),
           e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto' },
-            'Никаких Task(subagent_type=...). Среда сама поднимает нужного специалиста по словам в вашем сообщении.'
+            'Каждый субагент и скилл объявляет триггеры в YAML-frontmatter. Claude матчит сообщение пользователя с описаниями и активирует подходящий компонент.'
           )
         )
       ),
@@ -729,11 +722,10 @@ function CTA() {
     e('div', { className: 'relative max-w-4xl mx-auto px-6 text-center' },
       e(FadeIn, null,
         e('h2', { className: 'text-4xl md:text-6xl font-bold tracking-tight mb-6' },
-          'Нет смысла ',
-          e('span', { className: 'text-gradient' }, 'настраивать с нуля')
+          'Команда установки'
         ),
         e('p', { className: 'text-lg text-slate-400 max-w-2xl mx-auto mb-10' },
-          'Поставьте сейчас. Если не понравится — `rm -rf ~/harness` и вернётесь к голому Claude Code.'
+          'Удаление: rm -rf ~/harness. Обновление: git pull в склонированном репо + повторный install.sh с тем же --target.'
         ),
         e('div', { className: 'glass rounded-xl p-1 max-w-2xl mx-auto mb-6 glow' },
           e('div', { className: 'flex items-center gap-3 px-4 py-3' },
@@ -767,7 +759,7 @@ function Footer() {
           ),
           e('div', null,
             e('div', { className: 'font-mono font-semibold text-sm' }, 'harness_bro'),
-            e('div', { className: 'text-xs text-slate-500' }, 'Готовая среда Claude Code · MIT')
+            e('div', { className: 'text-xs text-slate-500' }, 'Конфигурация Claude Code · MIT')
           )
         ),
         e('div', { className: 'flex items-center gap-6 text-sm text-slate-400' },
