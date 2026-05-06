@@ -4,12 +4,21 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>harness_bro — конфигурация .claude/ для Claude Code</title>
-<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, 7 MCP-серверов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap, поддержкой conda и proxy." />
+<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 82 user-invocable скилла (+17 sub-skills), 5 субагентов, 7 MCP-серверов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap, поддержкой conda и proxy." />
 <meta property="og:title" content="harness_bro" />
 <meta property="og:description" content="Конфигурация .claude/ для Claude Code, заточенная под ML/AI-разработку." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://yanochka11.github.io/harness_bro/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://yanochka11.github.io/harness_bro/" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2308080a'/><circle cx='16' cy='16' r='6' fill='%2334d399'/></svg>" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  // suppress Tailwind CDN production-warning before script load
+  (function(){var w=window.console&&window.console.warn;if(!w)return;window.console.warn=function(){var a=arguments[0];if(typeof a==='string'&&a.indexOf('cdn.tailwindcss.com should not be used in production')!==-1)return;return w.apply(this,arguments);};})();
+</script>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
@@ -159,11 +168,50 @@
     transition: opacity 0.2s;
     will-change: left, top;
   }
+
+  /* skip-link для клавиатурной навигации */
+  .skip-link {
+    position: absolute; top: -40px; left: 8px; z-index: 100;
+    padding: 8px 16px; background: #34d399; color: #08080a;
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;
+    border-radius: 6px; text-decoration: none;
+    transition: top 0.2s;
+  }
+  .skip-link:focus { top: 8px; outline: 2px solid #d1fae5; outline-offset: 2px; }
+
+  /* focus-visible — заметно для клавиатуры, не назойливо для мыши */
+  :focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* prefers-reduced-motion: уважаем настройку ОС */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .aurora-bg::before, .aurora-bg::after { opacity: 0.15; }
+    .cursor-glow { display: none !important; }
+  }
 </style>
 </head>
 <body class="font-sans antialiased min-h-screen">
 
+<a href="#main" class="skip-link">Пропустить навигацию</a>
 <div id="root"></div>
+
+<noscript>
+  <div style="max-width:720px;margin:80px auto;padding:32px;font-family:Inter,sans-serif;color:#d4d4d8">
+    <h1 style="font-family:'JetBrains Mono',monospace;font-size:40px;margin:0 0 16px">harness_bro</h1>
+    <p style="margin:0 0 24px;line-height:1.6">Конфигурация .claude/ для Claude Code, заточенная под ML/AI-разработку. Сайт требует JavaScript для интерактива; команда установки ниже работает без JS.</p>
+    <pre style="background:#13131a;border:1px solid #1a1a22;border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:14px;overflow-x:auto;color:#34d399">curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash</pre>
+    <p style="margin:24px 0 0"><a href="https://github.com/yanochka11/harness_bro" style="color:#34d399">github.com/yanochka11/harness_bro ↗</a></p>
+  </div>
+</noscript>
 
 <script type="importmap">
 {
@@ -188,6 +236,8 @@ const GITHUB_URL = 'https://github.com/yanochka11/harness_bro';
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   return e('button', {
+    type: 'button',
+    'aria-label': copied ? 'Скопировано' : 'Скопировать команду в буфер обмена',
     onClick: async () => {
       try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false), 1800); } catch {}
     },
@@ -254,6 +304,7 @@ function Nav() {
     return () => window.removeEventListener('scroll', h);
   }, []);
   return e('nav', {
+    'aria-label': 'Главная навигация',
     className: `fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
       scrolled ? 'bg-ink-0/85 backdrop-blur-md border-b border-soft' : ''
     }`
@@ -270,11 +321,11 @@ function Nav() {
         e('a', { href: '#triggers', className: 'hover:text-ink-900 transition-colors' }, 'Триггеры'),
       ),
       e('a', {
-        href: GITHUB_URL, target: '_blank', rel: 'noopener',
+        href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer',
         className: 'text-sm text-ink-700 hover:text-em-400 transition-colors flex items-center gap-1.5',
       },
         e('span', null, 'GitHub'),
-        e('span', { className: 'text-ink-500' }, '↗'),
+        e('span', { className: 'text-ink-500', 'aria-hidden': 'true' }, '↗'),
       ),
     )
   );
@@ -293,8 +344,8 @@ function Hero() {
         transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
         className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-em-400/30 bg-em-400/5 backdrop-blur'
       },
-        e('span', { className: 'dot animate-breath' }),
-        e('span', { className: 'font-mono text-xs text-em-300 tracking-wider' }, 'v1.0  ·  MIT  ·  Linux  ·  macOS  ·  WSL2'),
+        e('span', { className: 'dot animate-breath', 'aria-hidden': 'true' }),
+        e('span', { className: 'font-mono text-xs text-em-300 tracking-wider' }, 'MIT  ·  Linux  ·  macOS  ·  WSL2'),
       ),
 
       // big title
@@ -322,7 +373,7 @@ function Hero() {
         transition: { duration: 0.8, delay: 0.25 },
         className: 'text-base text-ink-600 max-w-2xl mb-12 leading-relaxed'
       },
-        'Хуки, скиллы, субагенты, MCP-серверы и постоянная память — собранные в один установщик. Один command, переносимая на любую Linux/macOS машину.'
+        '5 субагентов, 6 хуков, 18 slash-команд, 82 скилла, 7 MCP-серверов и постоянная память — в одном установщике. Одна команда, ставится в текущую директорию, авто-логин в Claude.'
       ),
 
       // install command card with glow
@@ -357,14 +408,14 @@ function Hero() {
         transition: { duration: 0.8, delay: 0.45 },
         className: 'mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-ink-600'
       },
-        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener',
+        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer',
           className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
           'github.com/yanochka11/harness_bro', e('span', { className: 'text-ink-500' }, '↗')
         ),
         e('span', { className: 'text-ink-400' }, '·'),
         e('a', { href: '#install',
           className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
-          'Подробнее об установке', e('span', null, '↓'),
+          'Подробнее об установке', e('span', { 'aria-hidden': 'true' }, '↓'),
         ),
       ),
     )
@@ -374,8 +425,8 @@ function Hero() {
 // ─── Stats ────────────────────────────────────────────────────────
 function StatsLine() {
   const stats = [
-    [99,'скиллов'], [6,'хуков'], [5,'субагентов'],
-    [18,'команд'], [7,'MCP'], [43,'allow-list'],
+    [82,'скиллов'], [6,'хуков'], [5,'субагентов'],
+    [18,'команд'], [7,'MCP'], [43,'allow-rules'],
   ];
   return e('section', { className: 'border-y border-soft relative' },
     e('div', { className: 'absolute inset-0 bg-gradient-to-b from-em-500/[0.02] to-transparent pointer-events-none' }),
@@ -400,16 +451,16 @@ function StatsLine() {
 
 // ─── Features ─────────────────────────────────────────────────────
 const FEATURES = [
-  ['Защита от утечки секретов', 'Хук secret_guard блокирует Write/Edit и git commit/push/add при обнаружении ключей OpenAI, Anthropic, HuggingFace, GitHub, AWS, GCP, Slack, Stripe, W&B, JWT, PEM или паролей в DB-strings.'],
-  ['Постоянная память между сессиями', 'Recipe-файлы с regex-паттернами в .claude/memory/. После успешного фикса вы говорите «запомни» — auto_fix_suggest hook найдёт и подскажет рецепт при повторе той же ошибки.'],
-  ['Триггеры на естественном языке', 'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение пользователя с описаниями и активирует подходящий компонент.'],
-  ['Anti-hallucination protocol', 'Скиллы verify-claim и web-research срабатывают на «latest», «какая версия», «best practices» и заставляют проверить факт через WebFetch / context7 до утверждения.'],
-  ['Авто-фикс цикл', 'pytest/ruff/mypy упало → auto_fix_suggest читает stderr → grep recipes/ по regex → matching рецепт инжектится Claude → фикс применяется. Со 2-го раза одна ошибка решается за 0 токенов.'],
-  ['AST-валидация Python', 'После Write/Edit на .py — AST + py_compile + ruff F-rules (F821 undefined name, F823 local-before-assignment, F811 redefinition). Сломанный код блокируется на месте.'],
-  ['Самообучение из паттернов', 'auto_save_skill следит за tool-вызовами. Устойчивая последовательность ≥ 3 повторов с фильтром шума — черновик скилла. self-improve проводит мета-аудит и предлагает повышать в основной набор.'],
-  ['Долгие процессы только в фоне', 'Субагент runner запускает обучения и эвалуации через nohup с tee в runs/<task>/<ts>/run.log. Чат не блокируется. Мониторинг через pgrep, tail, nvidia-smi.'],
-  ['Поддержка MLSpace и proxy', 'install.sh находит HTTPS_PROXY, маскирует пароль в логах, прокидывает в npm config, проверяет доступность github.com. Установка одной командой работает за корпоративным прокси.'],
-  ['Минимум подтверждений', '43 read-only команды в permissions.allow + defaultMode auto + skipAutoPermissionPrompt — типичные cat / ls / git status / pytest выполняются без явного подтверждения.'],
+  ['Защита от утечки секретов', 'Хук secret_guard блокирует Write/Edit и git commit/push/add при обнаружении ключей OpenAI, Anthropic, HuggingFace, GitHub, AWS, GCP, Slack, Stripe, W&B, JWT, PEM или паролей в DB-строках.'],
+  ['Память между сессиями', 'Recipe-файлы с regex-паттернами в .claude/memory/. После успешного фикса говоришь «запомни» — следующий раз auto_fix_suggest найдёт рецепт по тексту ошибки и инжектит подсказку.'],
+  ['Триггеры на естественном языке', 'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение и активирует подходящий компонент. Ручной Task() не нужен.'],
+  ['Проверка фактов перед утверждением', 'Скиллы verify-claim и web-research срабатывают на «latest», «какая версия», «best practices» и требуют WebFetch / context7 до того, как ответ сформулирован.'],
+  ['Цикл авто-фикса', 'pytest/ruff/mypy упало → auto_fix_suggest читает stderr → grep .claude/memory/recipes/ по regex → matching рецепт инжектится → фикс применяется. Со 2-го раза та же ошибка чинится без расследования.'],
+  ['AST-валидация Python', 'После Write/Edit на .py — AST + py_compile + ruff F-rules (F821 undefined name, F823 local-before-assignment, F811 redefinition). Невалидный код не уезжает дальше.'],
+  ['Авто-предложение скиллов', 'auto_save_skill следит за tool-вызовами. Устойчивая последовательность ≥ 3 повторов кладётся черновиком в .claude/skills/auto/. Skill self-improve проводит мета-аудит.'],
+  ['Долгие процессы — в фоне', 'Субагент runner запускает обучения / эвалуации через nohup с tee в runs/<task>/<ts>/run.log. Чат не блокируется. Мониторинг через pgrep, tail, nvidia-smi.'],
+  ['MLSpace / proxy / alias', 'install.sh находит HTTPS_PROXY и маскирует пароль в логах. Детектит alias-заглушки claude=... в .zshrc/.bashrc и подставляет прямой путь к бинарю в команде запуска.'],
+  ['Минимум подтверждений', '43 правила в permissions.allow + defaultMode auto + skipAutoPermissionPrompt — read-only cat / ls / git status / pytest выполняются без prompt.'],
 ];
 
 function Features() {
@@ -453,9 +504,9 @@ function Inside() {
     { name:'agents/',   n:'5',  desc:'bug-hunter · code-writer · runner · paper-reader · researcher' },
     { name:'hooks/',    n:'6',  desc:'nfs_guard · secret_guard · validate_python · auto_save_skill · auto_fix_suggest · statusline' },
     { name:'commands/', n:'18', desc:'/lint /format /typecheck /pytest /coverage /tex-build · /env /gpu /procs /diskcfs /hf-cache · /git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp' },
-    { name:'skills/',   n:'99', desc:'46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, evaluating-llms-harness, code-review, github-pr-workflow, arxiv, latex-writing, data-viz, diagrams, dspy, outlines)' },
+    { name:'skills/',   n:'82', desc:'29 curated + 53 ported в плоской структуре (видны в /skills). Плюс 17 sub-skills внутри портов skill-factory · super-hermes · evals · gstack — подгружаются on-demand. Покрытие: HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, evaluating-llms-harness, code-review, github-pr-workflow, arxiv, latex-writing, data-viz, diagrams, dspy, outlines.' },
     { name:'.mcp.json', n:'7',  desc:'filesystem · github · tmux · context7 · memory · sequential-thinking · arxiv' },
-    { name:'memory/',   n:'',   desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
+    { name:'memory/',   n:'4',  desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
   ];
   return e('section', { id:'inside', className:'border-t border-soft py-32 relative' },
     e('div', { className:'absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-em-500/[0.04] blur-[100px] pointer-events-none' }),
@@ -470,7 +521,7 @@ function Inside() {
             'Содержимое .claude/'
           ),
           e('p', { className:'text-base text-ink-600 leading-relaxed' },
-            'Вся конфигурация в одной директории. Удаляется через ', e('code', { className:'font-mono text-ink-800' }, 'rm -rf .claude/'), ', обновляется через ', e('code', { className:'font-mono text-ink-800' }, 'git pull'), '.'
+            'Вся конфигурация в одной директории. Удаляется через ', e('code', { className:'font-mono text-ink-800' }, 'rm -rf .claude/'), ', обновляется перезапуском установщика — существующие файлы бэкапятся в ', e('code', { className:'font-mono text-ink-800' }, '*.bak'), '.'
           ),
         )
       ),
@@ -479,7 +530,7 @@ function Inside() {
           e('div', { className:'border-b border-soft px-4 py-2.5 flex items-center justify-between bg-ink-100/30' },
             e('div', { className:'flex items-center gap-2' },
               e('span', { className:'dot animate-breath' }),
-              e('span', { className:'font-mono text-xs text-em-300' }, '~/harness/.claude/'),
+              e('span', { className:'font-mono text-xs text-em-300' }, '<target>/.claude/'),
             ),
             e('span', { className:'font-mono text-xs text-ink-500' }, '6 entries'),
           ),
@@ -508,12 +559,11 @@ function Inside() {
 // ─── Install ──────────────────────────────────────────────────────
 function Install() {
   const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
-  const post = `cd ~/harness                  # workspace, где лежит .claude/
-which claude                  # путь должен указывать на npm prefix
-claude                        # интерактивная TUI-сессия Claude Code`;
+  const post = `cd <target>                                     # workspace, где лежит .claude/
+CLAUDE_CONFIG_DIR=$PWD/.claude-account claude   # запуск с per-project credentials`;
   const proxy = `export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
 export HTTP_PROXY="$HTTPS_PROXY"
-export NO_PROXY="localhost,127.0.0.1"
+export NO_PROXY="localhost,127.0.0.1,.cluster.local"
 
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
 
@@ -552,7 +602,7 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
             'Установка'
           ),
           e('p', { className:'text-base text-ink-600 leading-relaxed' },
-            'Скрипт проверяет зависимости (', e('code', { className:'font-mono text-em-300' }, 'python ≥ 3.10'), ', ', e('code', { className:'font-mono text-em-300' }, 'node'), ', ', e('code', { className:'font-mono text-em-300' }, 'npm'), ', ', e('code', { className:'font-mono text-em-300' }, 'git'), '), клонирует репо во временную директорию, разворачивает .claude/ в целевую папку, рендерит CLAUDE.md и .mcp.json из шаблонов с подстановкой пути.'
+            'По умолчанию ставится в текущую директорию. Скрипт проверяет зависимости (', e('code', { className:'font-mono text-em-300' }, 'python ≥ 3.10'), ', ', e('code', { className:'font-mono text-em-300' }, 'git'), ' — обязательны; ', e('code', { className:'font-mono text-em-300' }, 'node'), '+', e('code', { className:'font-mono text-em-300' }, 'npm'), ' — для MCP-серверов через npx), клонирует репо во временную директорию, копирует .claude/, рендерит CLAUDE.md и .mcp.json под workspace, делает хуки исполняемыми, по завершении запускает Claude Code.'
           ),
         )
       ),
@@ -562,9 +612,9 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
       e(FadeUp, { delay:0.15 },
         e(Block, {
           num:2, title:'Запустить',
-          body:'cd в созданный workspace и запустить Claude Code. Откроется интерактивная TUI-сессия в терминале. Если у вас multi-account setup и claude — это alias (например claude-account c CLAUDE_CONFIG_DIR), вызывайте свою обёртку, не дефолтный claude.',
+          body:'Установщик стартует Claude Code сам с CLAUDE_CONFIG_DIR=<target>/.claude-account. На первом запуске — login flow (URL для браузера). Команда ниже — для повторного запуска. Если в shell стоит alias-заглушка (как в MLSpace/JupyterHub: alias claude="echo …") — установщик это детектит и в команде запуска подставляет прямой путь к бинарю (например /home/jovyan/.local/bin/claude).',
           cmd: post,
-          comment:'Внутри: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос Claude. Выход: Ctrl+D или /exit.',
+          comment:'Внутри: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос. Выход: Ctrl+D или /exit.',
         })
       ),
       e(FadeUp, { delay:0.2 },
@@ -587,7 +637,7 @@ function Triggers() {
     ['запусти · обучи · evaluate',       'runner'],
     ['прочитай статью · arxiv',          'paper-reader'],
     ['исследуй · latest · какая версия', 'researcher · verify-claim'],
-    ['коммит · push',                    'secret-guard + хук'],
+    ['git commit · push · add',          'secret_guard hook'],
     ['запомни этот рецепт',              'record-recipe'],
     ['оптимизируй setup',                'self-improve'],
     ['нарисуй график · matplotlib',      'data-viz'],
@@ -675,7 +725,7 @@ function Footer() {
           ),
         ),
         e('div', { className:'flex items-center gap-6 text-sm text-ink-600' },
-          e('a', { href: GITHUB_URL, target:'_blank', rel:'noopener', className:'link-u hover:text-em-400 transition-colors' }, 'GitHub'),
+          e('a', { href: GITHUB_URL, target:'_blank', rel:'noopener noreferrer', className:'link-u hover:text-em-400 transition-colors' }, 'GitHub'),
           e('a', { href:'#install',  className:'link-u hover:text-em-400 transition-colors' }, 'Установка'),
           e('a', { href:'#features', className:'link-u hover:text-em-400 transition-colors' }, 'Свойства'),
           e('a', { href:'#triggers', className:'link-u hover:text-em-400 transition-colors' }, 'Триггеры'),
@@ -683,17 +733,17 @@ function Footer() {
       ),
       e('div', { className:'pt-8 border-t border-soft text-xs text-ink-500 leading-relaxed' },
         'Built on top of ',
-        e('a', { href:'https://claude.ai/code', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Claude Code'),
+        e('a', { href:'https://claude.ai/code', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'Claude Code'),
         '. Skills imported from ',
-        e('a', { href:'https://github.com/obra/superpowers', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'superpowers'),
+        e('a', { href:'https://github.com/obra/superpowers', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'superpowers'),
         ', ',
-        e('a', { href:'https://github.com/anthropics/skills', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'anthropic-skills'),
+        e('a', { href:'https://github.com/anthropics/skills', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'anthropic-skills'),
         ', ',
-        e('a', { href:'https://github.com/NousResearch/hermes-agent', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Hermes Agent'),
+        e('a', { href:'https://github.com/NousResearch/hermes-agent', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'Hermes Agent'),
         ', ',
-        e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
+        e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
         ', ',
-        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
+        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
         '.'
       )
     )
@@ -705,12 +755,14 @@ function App() {
   return e(React.Fragment, null,
     e(CursorGlow),
     e(Nav),
-    e(Hero),
-    e(StatsLine),
-    e(Features),
-    e(Inside),
-    e(Install),
-    e(Triggers),
+    e('main', { id: 'main' },
+      e(Hero),
+      e(StatsLine),
+      e(Features),
+      e(Inside),
+      e(Install),
+      e(Triggers),
+    ),
     e(Footer),
   );
 }
