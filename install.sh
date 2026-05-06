@@ -388,7 +388,7 @@ ${BOLD}Быстрая справка внутри Claude:${N}
 ${BOLD}Документация:${N}
   $TARGET/README.md           ${DIM}# full guide${N}
   $TARGET/CLAUDE.md           ${DIM}# что Claude читает на старте сессии${N}
-  $TARGET/.claude/skills/     ${DIM}# 99 skills (46 curated + 53 ported)${N}
+  $TARGET/.claude/skills/     ${DIM}# ~80 user-invocable skills + sub-skills${N}
 
 Happy coding!
 EOF

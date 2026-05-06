@@ -115,10 +115,14 @@ commands/      18    /lint /format /typecheck /pytest /coverage /tex-build
                      /env /gpu /procs /diskcfs /hf-cache
                      /git-status /find-todo /last-error /deps /wandb-runs
                      /run-dirs /clean-tmp
-skills/        99    46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL,
-                     vLLM, llama.cpp, evaluating-llms-harness, code-review,
+skills/        82    29 curated + 53 ported в плоской структуре (top-level,
+                     видны в /skills). Плюс 17 sub-skills внутри портов
+                     skill-factory / super-hermes / evals / gstack —
+                     загружаются on-demand самими родительскими скилами.
+                     Покрытие: HuggingFace, axolotl, unsloth, TRL, vLLM,
+                     llama.cpp, evaluating-llms-harness, code-review,
                      github-pr-workflow, arxiv, latex, data-viz, diagrams,
-                     dspy, outlines)
+                     dspy, outlines.
 mcp/            7    filesystem · github · tmux · context7
                      memory · sequential-thinking · arxiv
 memory/              recipes/ · decisions/ · gotchas/ · style/
@@ -209,9 +213,9 @@ Read-only снимки состояния. Вводятся как `/<name>` в 
 
 #### Скиллы — `.claude/skills/`
 
-99 SKILL.md, 46 curated + 53 ported. Каждый — markdown-файл с YAML-frontmatter (`name`, `description` с триггерными фразами). Claude матчит сообщение пользователя по описаниям и подгружает релевантные скиллы в контекст.
+99 SKILL.md файлов всего: **82 user-invocable** на верхнем уровне (29 curated + 53 ported) + **17 sub-skills** внутри портированных пакетов (skill-factory, super-hermes, evals, gstack), которые подгружаются on-demand их родителями. В `/skills` Claude Code показывает только верхний уровень. Каждый SKILL.md — markdown с YAML-frontmatter (`name`, `description` с триггерными фразами); описание ≤ 1024 символа, иначе Claude его пропускает.
 
-**Curated (46) — собственные / ключевые:**
+**Curated (29 top-level + 17 sub-skills = 46) — собственные / ключевые:**
 
 - *Workflow:* `verify-claim`, `web-research`, `record-recipe`, `self-improve`, `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`
 - *Безопасность:* `secret-guard`, `pre-commit-guard`
