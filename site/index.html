@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>harness_bro — конфигурация .claude/ для Claude Code</title>
+<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 82 user-invocable скилла (+17 sub-skills), 5 субагентов, 7 MCP-серверов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap, поддержкой conda и proxy." />
+<meta property="og:title" content="harness_bro" />
+<meta property="og:description" content="Конфигурация .claude/ для Claude Code, заточенная под ML/AI-разработку." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://yanochka11.github.io/harness_bro/" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="canonical" href="https://yanochka11.github.io/harness_bro/" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2308080a'/><circle cx='16' cy='16' r='6' fill='%2334d399'/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  // suppress Tailwind CDN production-warning before script load
+  (function(){var w=window.console&&window.console.warn;if(!w)return;window.console.warn=function(){var a=arguments[0];if(typeof a==='string'&&a.indexOf('cdn.tailwindcss.com should not be used in production')!==-1)return;return w.apply(this,arguments);};})();
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+          mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        },
+        colors: {
+          ink: {
+            0:'#08080a', 50:'#0d0d10', 100:'#13131a', 200:'#1a1a22',
+            300:'#23232b', 400:'#3a3a44', 500:'#5b5b66', 600:'#8b8b94',
+            700:'#a8a8b0', 800:'#d4d4d8', 900:'#fafafa',
+          },
+          em: {
+            300:'#6ee7b7', 400:'#34d399', 500:'#10b981', 600:'#059669',
+          },
+        },
+        letterSpacing: { tightest:'-0.04em', tighter:'-0.02em' },
+        animation: {
+          'aurora':  'aurora 20s ease infinite',
+          'breath':  'breath 4s ease-in-out infinite',
+          'spin-slow': 'spin 24s linear infinite',
+        },
+        keyframes: {
+          aurora: { '0%,100%':{transform:'translate(0,0) scale(1)'}, '50%':{transform:'translate(40px,-30px) scale(1.05)'} },
+          breath: { '0%,100%':{opacity:0.4}, '50%':{opacity:1} },
+        },
+      },
+    },
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+  body {
+    background: #08080a;
+    color: #d4d4d8;
+    font-feature-settings: 'cv11','ss01','ss03';
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(52,211,153,0.30); color: #fff; }
+
+  /* aurora gradient background — глубокая emerald-палитра */
+  .aurora-bg::before, .aurora-bg::after {
+    content: ''; position: absolute; inset: -20%;
+    pointer-events: none; filter: blur(100px); opacity: 0.38;
+  }
+  .aurora-bg::before {
+    background: radial-gradient(circle at 20% 30%, #10b981 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, #047857 0%, transparent 40%);
+    animation: aurora 22s ease infinite;
+  }
+  .aurora-bg::after {
+    background: radial-gradient(circle at 50% 50%, #064e3b 0%, transparent 35%);
+    animation: aurora 28s ease infinite reverse;
+  }
+  @keyframes aurora {
+    0%,100% { transform: translate(0,0) scale(1); }
+    33%     { transform: translate(40px,-20px) scale(1.05); }
+    66%     { transform: translate(-30px,30px) scale(0.95); }
+  }
+
+  /* grid pattern */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 800px 500px at 50% 0%, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 800px 500px at 50% 0%, black, transparent 70%);
+  }
+
+  .border-soft  { border-color: #1a1a22; }
+  .border-soft2 { border-color: #2a2a30; }
+
+  /* glow */
+  .glow {
+    box-shadow:
+      0 0 0 1px rgba(52,211,153,0.20),
+      0 0 36px -8px rgba(16,185,129,0.45),
+      0 0 80px -20px rgba(16,185,129,0.30),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .glow-hover { transition: box-shadow 0.4s ease, transform 0.3s ease; }
+  .glow-hover:hover {
+    box-shadow:
+      0 0 0 1px rgba(52,211,153,0.35),
+      0 0 60px -8px rgba(16,185,129,0.55),
+      0 0 120px -20px rgba(16,185,129,0.35);
+    transform: translateY(-1px);
+  }
+
+  /* gradient text — чисто emerald-градиент */
+  .text-gradient {
+    background: linear-gradient(135deg, #d1fae5 0%, #6ee7b7 25%, #34d399 55%, #059669 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    background-size: 200% 200%;
+    animation: gradient-x 8s ease infinite;
+  }
+  @keyframes gradient-x { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+
+  /* link underline */
+  .link-u { position: relative; display: inline-block; }
+  .link-u::after {
+    content:''; position:absolute; left:0; right:0; bottom:-2px; height:1px;
+    background: currentColor; opacity: 0.3; transition: opacity 0.2s;
+  }
+  .link-u:hover::after { opacity: 1; }
+
+  details summary { list-style: none; cursor: pointer; }
+  details summary::-webkit-details-marker { display: none; }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* floating dot indicator */
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399, 0 0 16px rgba(52,211,153,0.4);
+  }
+
+  /* card with accent strip on hover */
+  .feature-card {
+    position: relative;
+    transition: border-color 0.3s, transform 0.3s, background 0.3s;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: #10b981;
+    transform: scaleY(0); transform-origin: top;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .feature-card:hover::before { transform: scaleY(1); }
+  .feature-card:hover {
+    border-color: rgba(52,211,153,0.25);
+    background: rgba(13,13,16,0.7);
+  }
+
+  /* cursor glow follower — шустрый, глубокий emerald */
+  .cursor-glow {
+    position: fixed; pointer-events: none; z-index: 1;
+    width: 460px; height: 460px;
+    background: radial-gradient(circle, rgba(16,185,129,0.18) 0%, rgba(6,78,59,0.08) 30%, transparent 60%);
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s;
+    will-change: left, top;
+  }
+</style>
+</head>
+<body class="font-sans antialiased min-h-screen">
+
+<div id="root"></div>
+
+<noscript>
+  <div style="max-width:720px;margin:80px auto;padding:32px;font-family:Inter,sans-serif;color:#d4d4d8">
+    <h1 style="font-family:'JetBrains Mono',monospace;font-size:40px;margin:0 0 16px">harness_bro</h1>
+    <p style="margin:0 0 24px;line-height:1.6">Конфигурация .claude/ для Claude Code, заточенная под ML/AI-разработку. Сайт требует JavaScript для интерактива; команда установки ниже работает без JS.</p>
+    <pre style="background:#13131a;border:1px solid #1a1a22;border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:14px;overflow-x:auto;color:#34d399">curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash</pre>
+    <p style="margin:24px 0 0"><a href="https://github.com/yanochka11/harness_bro" style="color:#34d399">github.com/yanochka11/harness_bro ↗</a></p>
+  </div>
+</noscript>
+
+<script type="importmap">
+{
+  "imports": {
+    "react":            "https://esm.sh/react@18.3.1",
+    "react-dom":        "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "framer-motion":    "https://esm.sh/framer-motion@11.11.17?deps=react@18.3.1"
+  }
+}
+</script>
+
+<script type="module">
+import React, { useState, useEffect, useRef } from 'react';
+import { createRoot } from 'react-dom/client';
+import { motion, useInView, AnimatePresence, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion';
+
+const e = React.createElement;
+const GITHUB_URL = 'https://github.com/yanochka11/harness_bro';
+
+// ─── helpers ──────────────────────────────────────────────────────
+function CopyButton({ text }) {
+  const [copied, setCopied] = useState(false);
+  return e('button', {
+    onClick: async () => {
+      try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false), 1800); } catch {}
+    },
+    className: 'font-mono text-xs text-ink-600 hover:text-em-400 transition-colors px-2 py-1 flex items-center gap-1.5',
+  }, copied ? '✓ copied' : 'copy');
+}
+
+function FadeUp({ children, delay = 0, y = 16 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: '-60px' });
+  return e(motion.div, {
+    ref,
+    initial: { opacity: 0, y },
+    animate: inView ? { opacity: 1, y: 0 } : {},
+    transition: { duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] },
+  }, children);
+}
+
+function Counter({ to }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!inView) return;
+    const dur = 1400;
+    const t0 = performance.now();
+    const step = (t) => {
+      const p = Math.min(1, (t - t0) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.floor(to * eased));
+      if (p < 1) requestAnimationFrame(step);
+      else setN(to);
+    };
+    requestAnimationFrame(step);
+  }, [inView, to]);
+  return e('span', { ref }, n);
+}
+
+// cursor glow follower (only on desktop)
+function CursorGlow() {
+  const x = useMotionValue(-1000);
+  const y = useMotionValue(-1000);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia('(hover: none)').matches) return;
+    const move = (e) => { x.set(e.clientX); y.set(e.clientY); setVisible(true); };
+    window.addEventListener('mousemove', move);
+    return () => window.removeEventListener('mousemove', move);
+  }, []);
+  const sx = useSpring(x, { stiffness: 380, damping: 28, mass: 0.35 });
+  const sy = useSpring(y, { stiffness: 380, damping: 28, mass: 0.35 });
+  return e(motion.div, {
+    className: 'cursor-glow hidden md:block',
+    style: { left: sx, top: sy, opacity: visible ? 1 : 0 },
+  });
+}
+
+// ─── Nav ──────────────────────────────────────────────────────────
+function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const h = () => setScrolled(window.scrollY > 24);
+    window.addEventListener('scroll', h);
+    return () => window.removeEventListener('scroll', h);
+  }, []);
+  return e('nav', {
+    className: `fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+      scrolled ? 'bg-ink-0/85 backdrop-blur-md border-b border-soft' : ''
+    }`
+  },
+    e('div', { className: 'max-w-6xl mx-auto px-6 h-16 flex items-center justify-between' },
+      e('a', { href: '#top', className: 'flex items-center gap-2.5 group' },
+        e('span', { className: 'dot animate-breath' }),
+        e('span', { className: 'font-mono text-sm font-semibold text-ink-900 tracking-tight' }, 'harness_bro'),
+      ),
+      e('div', { className: 'hidden md:flex items-center gap-8 text-sm text-ink-600' },
+        e('a', { href: '#install',  className: 'hover:text-ink-900 transition-colors' }, 'Установка'),
+        e('a', { href: '#features', className: 'hover:text-ink-900 transition-colors' }, 'Свойства'),
+        e('a', { href: '#inside',   className: 'hover:text-ink-900 transition-colors' }, 'Что внутри'),
+        e('a', { href: '#triggers', className: 'hover:text-ink-900 transition-colors' }, 'Триггеры'),
+      ),
+      e('a', {
+        href: GITHUB_URL, target: '_blank', rel: 'noopener',
+        className: 'text-sm text-ink-700 hover:text-em-400 transition-colors flex items-center gap-1.5',
+      },
+        e('span', null, 'GitHub'),
+        e('span', { className: 'text-ink-500' }, '↗'),
+      ),
+    )
+  );
+}
+
+// ─── Hero ─────────────────────────────────────────────────────────
+function Hero() {
+  const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  return e('section', { id: 'top', className: 'relative pt-40 pb-32 overflow-hidden aurora-bg' },
+    e('div', { className: 'absolute inset-0 grid-bg pointer-events-none z-0' }),
+    e('div', { className: 'relative max-w-6xl mx-auto px-6 z-10' },
+
+      // version pill
+      e(motion.div, {
+        initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
+        className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-em-400/30 bg-em-400/5 backdrop-blur'
+      },
+        e('span', { className: 'dot animate-breath' }),
+        e('span', { className: 'font-mono text-xs text-em-300 tracking-wider' }, 'v1.0  ·  MIT  ·  Linux  ·  macOS  ·  WSL2'),
+      ),
+
+      // big title
+      e(motion.h1, {
+        initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] },
+        className: 'font-mono text-5xl md:text-7xl lg:text-8xl font-bold tracking-tightest leading-[0.95] mb-8 text-ink-900'
+      },
+        'harness_',
+        e('span', { className: 'text-gradient' }, 'bro'),
+      ),
+
+      // subtitle
+      e(motion.p, {
+        initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.2 },
+        className: 'text-xl md:text-2xl text-ink-700 leading-snug max-w-3xl mb-3 tracking-tight'
+      },
+        'Конфигурация ', e('code', { className: 'font-mono text-em-300 px-1.5 rounded bg-em-500/10 border border-em-400/20' }, '.claude/'),
+        ' для Claude Code, заточенная под ML/AI-разработку.'
+      ),
+
+      e(motion.p, {
+        initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 },
+        transition: { duration: 0.8, delay: 0.25 },
+        className: 'text-base text-ink-600 max-w-2xl mb-12 leading-relaxed'
+      },
+        '5 субагентов, 6 хуков, 18 slash-команд, 82 скилла, 7 MCP-серверов и постоянная память — в одном установщике. Одна команда, ставится в текущую директорию, авто-логин в Claude.'
+      ),
+
+      // install command card with glow
+      e(motion.div, {
+        initial: { opacity: 0, y: 20, scale: 0.98 }, animate: { opacity: 1, y: 0, scale: 1 },
+        transition: { duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] },
+        className: 'border border-em-400/20 rounded-xl bg-ink-50/80 backdrop-blur max-w-3xl glow glow-hover'
+      },
+        e('div', { className: 'flex items-center justify-between border-b border-soft px-4 py-2.5' },
+          e('div', { className: 'flex items-center gap-2.5' },
+            e('span', { className: 'flex gap-1' },
+              e('span', { className: 'w-2.5 h-2.5 rounded-full bg-red-500/40' }),
+              e('span', { className: 'w-2.5 h-2.5 rounded-full bg-yellow-500/40' }),
+              e('span', { className: 'w-2.5 h-2.5 rounded-full bg-green-500/40' }),
+            ),
+            e('span', { className: 'font-mono text-xs text-ink-500 ml-2' }, 'install'),
+          ),
+          e(CopyButton, { text: cmd }),
+        ),
+        e('div', { className: 'p-5 font-mono text-sm md:text-base overflow-x-auto no-scrollbar text-ink-800 leading-relaxed' },
+          e('span', { className: 'text-em-400 select-none' }, '$ '),
+          'curl -fsSL ',
+          e('span', { className: 'text-ink-700' }, 'https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh'),
+          e('span', { className: 'text-em-400' }, ' | '),
+          e('span', { className: 'text-ink-900' }, 'bash')
+        ),
+      ),
+
+      // CTA links
+      e(motion.div, {
+        initial: { opacity: 0 }, animate: { opacity: 1 },
+        transition: { duration: 0.8, delay: 0.45 },
+        className: 'mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-ink-600'
+      },
+        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener',
+          className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
+          'github.com/yanochka11/harness_bro', e('span', { className: 'text-ink-500' }, '↗')
+        ),
+        e('span', { className: 'text-ink-400' }, '·'),
+        e('a', { href: '#install',
+          className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
+          'Подробнее об установке', e('span', null, '↓'),
+        ),
+      ),
+    )
+  );
+}
+
+// ─── Stats ────────────────────────────────────────────────────────
+function StatsLine() {
+  const stats = [
+    [82,'скиллов'], [6,'хуков'], [5,'субагентов'],
+    [18,'команд'], [7,'MCP'], [43,'allow-rules'],
+  ];
+  return e('section', { className: 'border-y border-soft relative' },
+    e('div', { className: 'absolute inset-0 bg-gradient-to-b from-em-500/[0.02] to-transparent pointer-events-none' }),
+    e('div', { className: 'relative max-w-6xl mx-auto px-6 py-12' },
+      e('div', { className: 'grid grid-cols-3 md:grid-cols-6 gap-x-8 gap-y-8' },
+        ...stats.map(([n, label], i) =>
+          e(FadeUp, { key: i, delay: i * 0.05 },
+            e('div', { className: 'group' },
+              e('div', { className: 'flex items-baseline gap-1.5 mb-1' },
+                e('span', { className: 'font-mono text-3xl md:text-4xl font-bold text-ink-900 tracking-tighter group-hover:text-em-400 transition-colors' },
+                  e(Counter, { to: n })
+                ),
+              ),
+              e('div', { className: 'text-xs text-ink-600 uppercase tracking-wider font-mono' }, label),
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Features ─────────────────────────────────────────────────────
+const FEATURES = [
+  ['Защита от утечки секретов', 'Хук secret_guard блокирует Write/Edit и git commit/push/add при обнаружении ключей OpenAI, Anthropic, HuggingFace, GitHub, AWS, GCP, Slack, Stripe, W&B, JWT, PEM или паролей в DB-строках.'],
+  ['Память между сессиями', 'Recipe-файлы с regex-паттернами в .claude/memory/. После успешного фикса говоришь «запомни» — следующий раз auto_fix_suggest найдёт рецепт по тексту ошибки и инжектит подсказку.'],
+  ['Триггеры на естественном языке', 'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение и активирует подходящий компонент. Ручной Task() не нужен.'],
+  ['Проверка фактов перед утверждением', 'Скиллы verify-claim и web-research срабатывают на «latest», «какая версия», «best practices» и требуют WebFetch / context7 до того, как ответ сформулирован.'],
+  ['Цикл авто-фикса', 'pytest/ruff/mypy упало → auto_fix_suggest читает stderr → grep .claude/memory/recipes/ по regex → matching рецепт инжектится → фикс применяется. Со 2-го раза та же ошибка чинится без расследования.'],
+  ['AST-валидация Python', 'После Write/Edit на .py — AST + py_compile + ruff F-rules (F821 undefined name, F823 local-before-assignment, F811 redefinition). Невалидный код не уезжает дальше.'],
+  ['Авто-предложение скиллов', 'auto_save_skill следит за tool-вызовами. Устойчивая последовательность ≥ 3 повторов кладётся черновиком в .claude/skills/auto/. Skill self-improve проводит мета-аудит.'],
+  ['Долгие процессы — в фоне', 'Субагент runner запускает обучения / эвалуации через nohup с tee в runs/<task>/<ts>/run.log. Чат не блокируется. Мониторинг через pgrep, tail, nvidia-smi.'],
+  ['MLSpace / proxy / alias', 'install.sh находит HTTPS_PROXY и маскирует пароль в логах. Детектит alias-заглушки claude=... в .zshrc/.bashrc и подставляет прямой путь к бинарю в команде запуска.'],
+  ['Минимум подтверждений', '43 правила в permissions.allow + defaultMode auto + skipAutoPermissionPrompt — read-only cat / ls / git status / pytest выполняются без prompt.'],
+];
+
+function Features() {
+  return e('section', { id: 'features', className: 'py-32 relative' },
+    e('div', { className: 'max-w-6xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className: 'mb-20 max-w-2xl' },
+          e('div', { className: 'inline-flex items-center gap-2 mb-4' },
+            e('span', { className: 'h-px w-8 bg-em-400' }),
+            e('span', { className: 'font-mono text-xs text-em-400 tracking-wider uppercase' }, 'Свойства'),
+          ),
+          e('h2', { className: 'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight' },
+            'Что делает среда'
+          ),
+        )
+      ),
+      e('div', { className: 'grid md:grid-cols-2 gap-x-8 gap-y-3' },
+        ...FEATURES.map((f, i) =>
+          e(FadeUp, { key: i, delay: (i % 2) * 0.05 },
+            e('div', { className: 'feature-card border border-soft rounded-lg p-6 h-full' },
+              e('div', { className: 'flex items-start gap-5' },
+                e('div', { className: 'font-mono text-xs text-em-400 pt-1 flex-shrink-0 w-10' },
+                  String(i + 1).padStart(2, '0')
+                ),
+                e('div', { className: 'flex-1' },
+                  e('h3', { className: 'text-base font-semibold text-ink-900 mb-2 tracking-tight' }, f[0]),
+                  e('p', { className: 'text-sm text-ink-600 leading-relaxed' }, f[1]),
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Inside (file tree) ───────────────────────────────────────────
+function Inside() {
+  const rows = [
+    { name:'agents/',   n:'5',  desc:'bug-hunter · code-writer · runner · paper-reader · researcher' },
+    { name:'hooks/',    n:'6',  desc:'nfs_guard · secret_guard · validate_python · auto_save_skill · auto_fix_suggest · statusline' },
+    { name:'commands/', n:'18', desc:'/lint /format /typecheck /pytest /coverage /tex-build · /env /gpu /procs /diskcfs /hf-cache · /git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp' },
+    { name:'skills/',   n:'82', desc:'29 curated + 53 ported в плоской структуре (видны в /skills). Плюс 17 sub-skills внутри портов skill-factory · super-hermes · evals · gstack — подгружаются on-demand. Покрытие: HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, evaluating-llms-harness, code-review, github-pr-workflow, arxiv, latex-writing, data-viz, diagrams, dspy, outlines.' },
+    { name:'.mcp.json', n:'7',  desc:'filesystem · github · tmux · context7 · memory · sequential-thinking · arxiv' },
+    { name:'memory/',   n:'',   desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
+  ];
+  return e('section', { id:'inside', className:'border-t border-soft py-32 relative' },
+    e('div', { className:'absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-em-500/[0.04] blur-[100px] pointer-events-none' }),
+    e('div', { className:'relative max-w-6xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className:'mb-16 max-w-2xl' },
+          e('div', { className:'inline-flex items-center gap-2 mb-4' },
+            e('span', { className:'h-px w-8 bg-em-400' }),
+            e('span', { className:'font-mono text-xs text-em-400 tracking-wider uppercase' }, 'Структура'),
+          ),
+          e('h2', { className:'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Содержимое .claude/'
+          ),
+          e('p', { className:'text-base text-ink-600 leading-relaxed' },
+            'Вся конфигурация в одной директории. Удаляется через ', e('code', { className:'font-mono text-ink-800' }, 'rm -rf .claude/'), ', обновляется перезапуском установщика — существующие файлы бэкапятся в ', e('code', { className:'font-mono text-ink-800' }, '*.bak'), '.'
+          ),
+        )
+      ),
+      e(FadeUp, { delay:0.1 },
+        e('div', { className:'border border-em-400/15 rounded-xl bg-ink-50/40 overflow-hidden glow' },
+          e('div', { className:'border-b border-soft px-4 py-2.5 flex items-center justify-between bg-ink-100/30' },
+            e('div', { className:'flex items-center gap-2' },
+              e('span', { className:'dot animate-breath' }),
+              e('span', { className:'font-mono text-xs text-em-300' }, '<target>/.claude/'),
+            ),
+            e('span', { className:'font-mono text-xs text-ink-500' }, '6 entries'),
+          ),
+          e('div', { className:'divide-y divide-ink-100' },
+            ...rows.map((r, i) =>
+              e(motion.div, {
+                key: i,
+                initial: { opacity: 0, x: -10 },
+                whileInView: { opacity: 1, x: 0 },
+                viewport: { once: true, margin: '-50px' },
+                transition: { duration: 0.5, delay: i * 0.06 },
+                className:'grid grid-cols-12 gap-4 px-4 py-4 hover:bg-em-500/[0.04] transition-colors group'
+              },
+                e('div', { className:'col-span-3 md:col-span-2 font-mono text-sm text-em-300 font-medium group-hover:text-em-400 transition' }, r.name),
+                e('div', { className:'col-span-2 md:col-span-1 font-mono text-sm text-ink-500 text-right md:text-left' }, r.n),
+                e('div', { className:'col-span-7 md:col-span-9 text-sm text-ink-700 leading-relaxed' }, r.desc),
+              )
+            )
+          )
+        )
+      )
+    )
+  );
+}
+
+// ─── Install ──────────────────────────────────────────────────────
+function Install() {
+  const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+  const post = `cd <target>                                     # workspace, где лежит .claude/
+CLAUDE_CONFIG_DIR=$PWD/.claude-account claude   # запуск с per-project credentials`;
+  const proxy = `export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
+export HTTP_PROXY="$HTTPS_PROXY"
+export NO_PROXY="localhost,127.0.0.1"
+
+curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
+
+  const Block = ({ num, title, body, cmd, comment }) =>
+    e('div', { className:'mb-12 last:mb-0' },
+      e('div', { className:'flex items-center gap-3 mb-4' },
+        e('span', { className:'font-mono text-xs text-em-400 font-bold tracking-wider' }, String(num).padStart(2,'0')),
+        e('span', { className:'h-px flex-1 bg-soft' }),
+        e('span', { className:'font-mono text-xs text-ink-500 tracking-wider uppercase' }, title),
+      ),
+      body && e('p', { className:'text-sm text-ink-700 leading-relaxed mb-4 max-w-2xl' }, body),
+      cmd && e('div', { className:'border border-em-400/15 rounded-lg bg-ink-50 overflow-hidden glow-hover' },
+        e('div', { className:'flex items-center justify-between border-b border-soft px-4 py-2' },
+          e('span', { className:'font-mono text-xs text-ink-500' }, 'bash'),
+          e(CopyButton, { text: cmd }),
+        ),
+        e('pre', { className:'p-4 font-mono text-sm overflow-x-auto no-scrollbar text-ink-800 leading-relaxed' },
+          e('code', null, cmd)
+        )
+      ),
+      comment && e('p', { className:'text-xs text-ink-500 mt-3 leading-relaxed flex items-start gap-2' },
+        e('span', { className:'text-em-400 flex-shrink-0' }, '◇'),
+        e('span', null, comment)
+      ),
+    );
+
+  return e('section', { id:'install', className:'border-t border-soft py-32' },
+    e('div', { className:'max-w-6xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className:'mb-16 max-w-2xl' },
+          e('div', { className:'inline-flex items-center gap-2 mb-4' },
+            e('span', { className:'h-px w-8 bg-em-400' }),
+            e('span', { className:'font-mono text-xs text-em-400 tracking-wider uppercase' }, 'install.sh'),
+          ),
+          e('h2', { className:'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Установка'
+          ),
+          e('p', { className:'text-base text-ink-600 leading-relaxed' },
+            'По умолчанию ставится в текущую директорию. Скрипт проверяет зависимости (', e('code', { className:'font-mono text-em-300' }, 'python ≥ 3.10'), ', ', e('code', { className:'font-mono text-em-300' }, 'git'), ' — обязательны; ', e('code', { className:'font-mono text-em-300' }, 'node'), '+', e('code', { className:'font-mono text-em-300' }, 'npm'), ' — для MCP-серверов через npx), клонирует репо во временную директорию, копирует .claude/, рендерит CLAUDE.md и .mcp.json под workspace, делает хуки исполняемыми, по завершении запускает Claude Code.'
+          ),
+        )
+      ),
+      e(FadeUp, { delay:0.1 },
+        e(Block, { num:1, title:'Установить', cmd, comment:'Идемпотентный — можно перезапускать. Существующие файлы автобэкапятся в *.bak.' })
+      ),
+      e(FadeUp, { delay:0.15 },
+        e(Block, {
+          num:2, title:'Запустить',
+          body:'Установщик стартует Claude Code сам с CLAUDE_CONFIG_DIR=<target>/.claude-account. На первом запуске — login flow (URL для браузера). Команда ниже — для повторного запуска. Если в shell стоит alias-заглушка (как в MLSpace/JupyterHub) — установщик это детектит и подсунет прямой путь к бинарю.',
+          cmd: post,
+          comment:'Внутри: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос. Выход: Ctrl+D или /exit.',
+        })
+      ),
+      e(FadeUp, { delay:0.2 },
+        e(Block, {
+          num:3, title:'MLSpace / прокси',
+          body:'На MLSpace и закрытых серверах сначала экспортируйте HTTPS_PROXY. Установщик подхватит, замаскирует пароль в логах, прокинет в npm config.',
+          cmd: proxy,
+          comment:'Не вставляйте credentials в код или git — только env vars или ~/.netrc.',
+        })
+      ),
+    )
+  );
+}
+
+// ─── Triggers ─────────────────────────────────────────────────────
+function Triggers() {
+  const rows = [
+    ['напиши · реализуй · рефактор',     'code-writer'],
+    ['падает · traceback · OOM',         'bug-hunter'],
+    ['запусти · обучи · evaluate',       'runner'],
+    ['прочитай статью · arxiv',          'paper-reader'],
+    ['исследуй · latest · какая версия', 'researcher · verify-claim'],
+    ['коммит · push',                    'secret-guard + хук'],
+    ['запомни этот рецепт',              'record-recipe'],
+    ['оптимизируй setup',                'self-improve'],
+    ['нарисуй график · matplotlib',      'data-viz'],
+    ['нарисуй схему · mermaid',          'diagrams'],
+    ['статья в латех · overleaf',        'latex-writing'],
+    ['найди где X · callers Y',          'smart-grep'],
+  ];
+  return e('section', { id:'triggers', className:'border-t border-soft py-32' },
+    e('div', { className:'max-w-6xl mx-auto px-6' },
+      e(FadeUp, null,
+        e('div', { className:'mb-16 max-w-2xl' },
+          e('div', { className:'inline-flex items-center gap-2 mb-4' },
+            e('span', { className:'h-px w-8 bg-em-400' }),
+            e('span', { className:'font-mono text-xs text-em-400 tracking-wider uppercase' }, 'Активация'),
+          ),
+          e('h2', { className:'text-4xl md:text-5xl text-ink-900 font-semibold tracking-tighter leading-tight mb-4' },
+            'Триггерные фразы'
+          ),
+          e('p', { className:'text-base text-ink-600 leading-relaxed' },
+            'Каждый субагент и скилл объявляет триггерные фразы в YAML-frontmatter. Claude матчит сообщение пользователя и активирует подходящий компонент. Ручной вызов через ',
+            e('code', { className:'font-mono text-em-300' }, 'Task(subagent_type=…)'), ' не нужен.'
+          ),
+        )
+      ),
+      e(FadeUp, { delay:0.1 },
+        e('div', { className:'border border-em-400/15 rounded-xl bg-ink-50/40 overflow-hidden' },
+          e('table', { className:'w-full' },
+            e('thead', null,
+              e('tr', { className:'border-b border-soft bg-ink-100/30' },
+                e('th', { className:'text-left font-mono text-xs text-em-300 tracking-wider uppercase font-medium px-5 py-3' }, 'Сообщение'),
+                e('th', { className:'text-left font-mono text-xs text-em-300 tracking-wider uppercase font-medium px-5 py-3' }, 'Активирует'),
+              )
+            ),
+            e('tbody', { className:'divide-y divide-ink-100' },
+              ...rows.map(([msg, act], i) =>
+                e(motion.tr, {
+                  key:i,
+                  initial: { opacity: 0 },
+                  whileInView: { opacity: 1 },
+                  viewport: { once: true, margin: '-30px' },
+                  transition: { duration: 0.4, delay: i * 0.04 },
+                  className:'hover:bg-em-500/[0.04] transition-colors'
+                },
+                  e('td', { className:'text-sm text-ink-800 px-5 py-3' }, msg),
+                  e('td', { className:'text-sm font-mono text-em-300 px-5 py-3 font-medium' }, act),
+                )
+              )
+            )
+          )
+        )
+      ),
+      // auto-fix flow
+      e(FadeUp, { delay:0.15 },
+        e('div', { className:'mt-12 max-w-3xl' },
+          e('div', { className:'inline-flex items-center gap-2 mb-4' },
+            e('span', { className:'h-px w-8 bg-em-400' }),
+            e('span', { className:'font-mono text-xs text-em-400 tracking-wider uppercase' }, 'Цикл авто-фикса'),
+          ),
+          e('div', { className:'border border-em-400/15 rounded-xl bg-ink-50 p-6 font-mono text-sm text-ink-700 leading-loose glow' },
+            e('div', null, e('span', { className:'text-em-400' }, '▸'), ' тест/линтер падает  →  auto_fix_suggest читает stderr'),
+            e('div', { className:'pl-[10ch]' }, '→  grep recipes/ по regex'),
+            e('div', { className:'pl-[10ch]' }, '→  matching рецепт инжектится Claude'),
+            e('div', { className:'pl-[10ch]' }, '→  фикс применяется'),
+            e('div', { className:'mt-3' }, e('span', { className:'text-em-400' }, '▸'), ' после фикса        →  «запомни» → record-recipe пишет файл'),
+            e('div', { className:'pl-[19ch]' }, '→  ', e('span', { className:'text-em-300 font-semibold' }, 'следующий раз: 0 токенов на расследование')),
+          )
+        )
+      ),
+    )
+  );
+}
+
+// ─── Footer ───────────────────────────────────────────────────────
+function Footer() {
+  return e('footer', { className:'border-t border-soft py-16' },
+    e('div', { className:'max-w-6xl mx-auto px-6' },
+      e('div', { className:'flex flex-col md:flex-row items-start md:items-end justify-between gap-8 mb-12' },
+        e('div', null,
+          e('div', { className:'flex items-center gap-2.5 mb-3' },
+            e('span', { className:'dot animate-breath' }),
+            e('span', { className:'font-mono text-base font-semibold text-ink-900' }, 'harness_bro'),
+          ),
+          e('div', { className:'text-sm text-ink-600 max-w-md leading-relaxed' },
+            'Конфигурация .claude/ для Claude Code. Открытый исходный код, MIT.'
+          ),
+        ),
+        e('div', { className:'flex items-center gap-6 text-sm text-ink-600' },
+          e('a', { href: GITHUB_URL, target:'_blank', rel:'noopener', className:'link-u hover:text-em-400 transition-colors' }, 'GitHub'),
+          e('a', { href:'#install',  className:'link-u hover:text-em-400 transition-colors' }, 'Установка'),
+          e('a', { href:'#features', className:'link-u hover:text-em-400 transition-colors' }, 'Свойства'),
+          e('a', { href:'#triggers', className:'link-u hover:text-em-400 transition-colors' }, 'Триггеры'),
+        )
+      ),
+      e('div', { className:'pt-8 border-t border-soft text-xs text-ink-500 leading-relaxed' },
+        'Built on top of ',
+        e('a', { href:'https://claude.ai/code', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Claude Code'),
+        '. Skills imported from ',
+        e('a', { href:'https://github.com/obra/superpowers', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'superpowers'),
+        ', ',
+        e('a', { href:'https://github.com/anthropics/skills', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'anthropic-skills'),
+        ', ',
+        e('a', { href:'https://github.com/NousResearch/hermes-agent', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Hermes Agent'),
+        ', ',
+        e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
+        ', ',
+        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
+        '.'
+      )
+    )
+  );
+}
+
+// ─── App ──────────────────────────────────────────────────────────
+function App() {
+  return e(React.Fragment, null,
+    e(CursorGlow),
+    e(Nav),
+    e(Hero),
+    e(StatsLine),
+    e(Features),
+    e(Inside),
+    e(Install),
+    e(Triggers),
+    e(Footer),
+  );
+}
+
+createRoot(document.getElementById('root')).render(e(App));
+</script>
+</body>
+</html>
