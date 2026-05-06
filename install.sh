@@ -361,9 +361,11 @@ cat <<EOF
 
 ${G}${BOLD}✓ harness_bro installed to:${N} $TARGET
 
-${CLAUDE_NOTE}${BOLD}Запуск Claude Code:${N}
+${CLAUDE_NOTE}${BOLD}Повторный запуск Claude Code в этом проекте:${N}
 
-  ${G}cd $TARGET && $CLAUDE_LAUNCH${N}
+  ${G}cd $TARGET && CLAUDE_CONFIG_DIR=$TARGET/.claude-account $CLAUDE_LAUNCH${N}
+
+  ${DIM}Per-project credentials хранятся в $TARGET/.claude-account/${N}
 
 ${BOLD}Опциональные env vars (export ДО \`claude\`):${N}
 
@@ -390,3 +392,31 @@ ${BOLD}Документация:${N}
 
 Happy coding!
 EOF
+
+# ── auto-launch Claude Code ───────────────────────────────────────
+# Делаем CLAUDE_CONFIG_DIR внутри проекта (per-project credentials),
+# затем exec'аем реальный бинарь — login flow стартанёт автоматически
+# при первом запуске (CONFIG_DIR пустой → claude попросит auth).
+echo
+if [ -z "$CLAUDE_REAL" ]; then
+    warn "claude бинарь не найден в PATH — поставь Claude Code и запусти вручную:"
+    say "  cd $TARGET && claude"
+    exit 0
+fi
+
+CLAUDE_CONF="$TARGET/.claude-account"
+mkdir -p "$CLAUDE_CONF"
+
+if [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    info "Стартую Claude Code из $TARGET (CONFIG_DIR=$CLAUDE_CONF)..."
+    if [ ! -f "$CLAUDE_CONF/.credentials.json" ] && [ ! -f "$CLAUDE_CONF/auth.json" ]; then
+        say "  ${Y}первый запуск — будет login flow (скопируй URL в браузер)${N}"
+    fi
+    say "  ${DIM}выход из Claude — Ctrl+D или /exit${N}"
+    echo
+    cd "$TARGET"
+    exec env CLAUDE_CONFIG_DIR="$CLAUDE_CONF" "$CLAUDE_REAL" </dev/tty >/dev/tty 2>&1
+else
+    warn "Нет TTY — не могу автозапустить. Запусти руками:"
+    say "  cd $TARGET && CLAUDE_CONFIG_DIR=$CLAUDE_CONF $CLAUDE_REAL"
+fi
