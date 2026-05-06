@@ -344,8 +344,8 @@ function Hero() {
         transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] },
         className: 'inline-flex items-center gap-2 px-3 py-1 mb-8 rounded-full border border-em-400/30 bg-em-400/5 backdrop-blur'
       },
-        e('span', { className: 'dot animate-breath' }),
-        e('span', { className: 'font-mono text-xs text-em-300 tracking-wider' }, 'v1.0  ·  MIT  ·  Linux  ·  macOS  ·  WSL2'),
+        e('span', { className: 'dot animate-breath', 'aria-hidden': 'true' }),
+        e('span', { className: 'font-mono text-xs text-em-300 tracking-wider' }, 'MIT  ·  Linux  ·  macOS  ·  WSL2'),
       ),
 
       // big title
@@ -612,7 +612,7 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
       e(FadeUp, { delay:0.15 },
         e(Block, {
           num:2, title:'Запустить',
-          body:'Установщик стартует Claude Code сам с CLAUDE_CONFIG_DIR=<target>/.claude-account. На первом запуске — login flow (URL для браузера). Команда ниже — для повторного запуска. Если в shell стоит alias-заглушка (как в MLSpace/JupyterHub) — установщик это детектит и подсунет прямой путь к бинарю.',
+          body:'Установщик стартует Claude Code сам с CLAUDE_CONFIG_DIR=<target>/.claude-account. На первом запуске — login flow (URL для браузера). Команда ниже — для повторного запуска. Если в shell стоит alias-заглушка (как в MLSpace/JupyterHub: alias claude="echo …") — установщик это детектит и в команде запуска подставляет прямой путь к бинарю (например /home/jovyan/.local/bin/claude).',
           cmd: post,
           comment:'Внутри: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос. Выход: Ctrl+D или /exit.',
         })
@@ -637,7 +637,7 @@ function Triggers() {
     ['запусти · обучи · evaluate',       'runner'],
     ['прочитай статью · arxiv',          'paper-reader'],
     ['исследуй · latest · какая версия', 'researcher · verify-claim'],
-    ['коммит · push',                    'secret-guard + хук'],
+    ['git commit · push · add',          'secret_guard hook'],
     ['запомни этот рецепт',              'record-recipe'],
     ['оптимизируй setup',                'self-improve'],
     ['нарисуй график · matplotlib',      'data-viz'],
