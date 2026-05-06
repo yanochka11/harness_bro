@@ -330,14 +330,40 @@ if [[ "$INSTALL_TOOLS" =~ ^[Yy] ]]; then
     fi
 fi
 
+# ── detect claude wrapper / alias (MLSpace, jupyter и т.п.) ───────
+CLAUDE_LAUNCH="claude"
+CLAUDE_NOTE=""
+# Резолвим реальный путь (обходит alias текущей оболочки)
+CLAUDE_REAL=""
+if command -v claude >/dev/null 2>&1; then
+    CLAUDE_REAL="$(command -v claude)"
+fi
+# Проверяем alias в bash/zsh пользователя — alias 'claude=...echo...' и подобные
+# заглушки часто стоят в multi-user окружениях (MLSpace, JupyterHub).
+ALIAS_HIT=""
+for rc in "$HOME/.zshrc" "$HOME/.bashrc" "$HOME/.profile" "$HOME/.bash_profile"; do
+    [ -f "$rc" ] || continue
+    if grep -qE "^[[:space:]]*alias[[:space:]]+claude=" "$rc" 2>/dev/null; then
+        ALIAS_HIT="$rc"
+        break
+    fi
+done
+if [ -n "$ALIAS_HIT" ] && [ -n "$CLAUDE_REAL" ]; then
+    CLAUDE_LAUNCH="$CLAUDE_REAL"
+    CLAUDE_NOTE="${Y}⚠ В $ALIAS_HIT обнаружен alias claude=...${N}
+  В команде запуска ниже использован прямой путь к бинарю. Чтобы
+  убрать alias навсегда — удалите соответствующую строку из rc-файла.
+"
+fi
+
 # ── done ──────────────────────────────────────────────────────────
 cat <<EOF
 
 ${G}${BOLD}✓ harness_bro installed to:${N} $TARGET
 
-${BOLD}Запуск Claude Code:${N}
+${CLAUDE_NOTE}${BOLD}Запуск Claude Code:${N}
 
-  ${G}cd $TARGET && claude${N}
+  ${G}cd $TARGET && $CLAUDE_LAUNCH${N}
 
 ${BOLD}Опциональные env vars (export ДО \`claude\`):${N}
 
