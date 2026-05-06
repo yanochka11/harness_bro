@@ -105,6 +105,123 @@ memory/              recipes/ · decisions/ · gotchas/ · style/
 
 🌍 **Без жёстких путей.** Всё через env vars и подстановку в шаблонах.
 
+<br/>
+
+<details>
+<summary><b>📖 Подробное описание каждого компонента</b></summary>
+
+<br/>
+
+#### Субагенты — `.claude/agents/`
+
+Активируются автоматически по триггерным словам в сообщении. Каждый — отдельный системный промпт с ограниченным набором инструментов и собственным жизненным циклом.
+
+| Агент | Триггеры | Что делает |
+|:--|:--|:--|
+| **`code-writer`** | напиши, реализуй, добавь, рефактор, переписать, имплементируй, implement, refactor, write | Senior-level Python / JS / Go / Rust. Сначала читает 3–5 соседних файлов через Grep/Glob, чтобы понять конвенции проекта (импорты, docstring-стиль, error handling). Затем правит код через Edit / Write. После — AST-валидация и `pytest -x`. |
+| **`bug-hunter`** | падает, ошибка, traceback, не работает, exception, OOM, slow, memory leak | Не лечит вслепую. Читает логи / трейс, минимально воспроизводит баг, формулирует 2–3 гипотезы и ранжирует их. Только потом пишет точечный фикс + регрессионный тест. |
+| **`runner`** | запусти, run, train, fine-tune, evaluate, мониторинг, status, stop run | Длинные процессы запускает только в фоне (`nohup`), пишет лог в `runs/<task>/<ts>/run.log`. Никогда не блокирует чат. Умеет мониторить через `pgrep`, `tail -F`, `nvidia-smi` и аккуратно останавливать через `pkill -TERM`. |
+| **`paper-reader`** | прочитай статью, summarize paper, arxiv, что в этом пейпере, ключевые идеи статьи | Скачивает arxiv / HF papers / локальный PDF, читает и возвращает структурный конспект: ключевые контрибуции, метод, результаты, ограничения. |
+| **`researcher`** | исследуй, найди в интернете, research, что нового в, latest, recent, current best practices, какая версия | Многоисточниковый веб-ресёрч. Декомпозирует вопрос → план поиска → `WebSearch` + `WebFetch` + `context7` → синтез с цитатами и retrieval-датами. Работает в связке с `verify-claim`. |
+
+#### Хуки — `.claude/hooks/`
+
+Срабатывают автоматически на жизненные события Claude Code (`PreToolUse`, `PostToolUse`, `Stop`, `UserPromptSubmit`). Регистрация в `.claude/settings.json`.
+
+| Хук | Когда срабатывает | Что делает |
+|:--|:--|:--|
+| **`nfs_guard.py`** | `PreToolUse` (Write / Edit / Bash) | Блокирует запись в любые пути, перечисленные в env-var `HARNESS_BANNED_PATHS`. Полезно на NFS-кластерах вроде MLSpace, где `/home/jovyan` read-only. Без env-var — no-op. |
+| **`secret_guard.py`** | `PreToolUse` (Write / Edit / Bash) | Сканирует содержимое на API-ключи: OpenAI, Anthropic, HuggingFace, GitHub PAT/OAuth, AWS, GCP, Slack, Stripe, W&B, JWT, PEM, пароли в DB-strings. При обнаружении — `decision: block`, операция отменяется. |
+| **`validate_python.py`** | `PostToolUse` (Write / Edit на `.py`) | После каждой записи Python-файла прогоняет AST + `py_compile` + `ruff F-rules` (F821 undefined name, F823 local-before-assignment, F811 redefinition). Сломанный код блокируется до того, как пойдёт дальше. |
+| **`auto_save_skill.py`** | `PostToolUse` (любой) и `Stop` | Записывает все tool-вызовы в `.claude/state/`. На `Stop` смотрит, не повторился ли устойчивый паттерн ≥ 3 раз с фильтром шума — если да, кладёт черновик скилла в `.claude/skills/auto/`. |
+| **`auto_fix_suggest.py`** | `PostToolUse` (Bash) | После падения `pytest` / `ruff` / `mypy` читает stderr, ищет matching рецепт в `.claude/memory/recipes/` по regex-паттерну и инжектит подсказку Claude. Цикл «тест упал → рецепт найден → фикс применён» работает на втором повторе ошибки за 0 токенов на расследование. |
+| **`statusline.sh`** | каждый рендер строки статуса | Показывает в нижней строке Claude Code сводку: модель, текущий каталог, GPU-загрузка, количество фоновых процессов. |
+
+#### Быстрые команды — `.claude/commands/`
+
+Read-only снимки состояния. Вводятся как `/<name>` в Claude Code TUI.
+
+**Код и тесты (6):**
+
+| Команда | Действие |
+|:--|:--|
+| `/lint` | Запуск всех настроенных линтеров проекта (ruff, mypy, eslint, …) |
+| `/format` | Авто-форматирование Python (`ruff format`) |
+| `/typecheck` | Проверка типов (`mypy` или `pyright`) |
+| `/pytest` | `pytest -x --ff` (last-failed first, fail-fast) |
+| `/coverage` | `pytest --cov` с coverage-репортом |
+| `/tex-build` | Сборка LaTeX через `latexmk` (с авто-определением bib и пере-прогонами) |
+
+**Окружение (5):**
+
+| Команда | Действие |
+|:--|:--|
+| `/env` | Conda env, Python, ALPHA_ROOT, HF, W&B, кол-во GPU |
+| `/gpu` | Снимок `nvidia-smi` |
+| `/procs` | Запущенные python / training / eval процессы (пользовательские + GPU compute apps) |
+| `/diskcfs` | Размер HF-кэша (использует `$HF_HOME`) |
+| `/hf-cache` | HuggingFace кэш: total + top-10 моделей + top-5 датасетов |
+
+**Состояние (7):**
+
+| Команда | Действие |
+|:--|:--|
+| `/git-status` | `git status` + diff stats + последние коммиты |
+| `/find-todo` | TODO / FIXME / HACK маркеры в коде |
+| `/last-error` | Последние 50 строк с error / traceback из `runs/` |
+| `/deps` | Установленные Python-пакеты (top-50 по частоте импорта) |
+| `/wandb-runs` | Последние 10 W&B runs (локальных + summary) |
+| `/run-dirs` | Последние 10 run-директорий в `$ALPHA_ROOT/runs/` (размер + последняя строка лога) |
+| `/clean-tmp` | Что лежит в `/tmp/` от текущего пользователя (info-only, не удаляет) |
+
+#### Скиллы — `.claude/skills/`
+
+99 SKILL.md, 46 curated + 53 ported. Каждый — markdown-файл с YAML-frontmatter (`name`, `description` с триггерными фразами). Claude матчит сообщение пользователя по описаниям и подгружает релевантные скиллы в контекст.
+
+**Curated (46) — собственные / ключевые:**
+
+- *Workflow:* `verify-claim`, `web-research`, `record-recipe`, `self-improve`
+- *Безопасность:* `secret-guard`, `command-injection-guard`
+- *Документы:* `latex-writing`, `markdown-formatting`
+- *Визуализация:* `data-viz` (matplotlib / seaborn / plotly), `diagrams` (mermaid / d2 / plantuml)
+- *Поиск кода:* `smart-grep`
+- + ещё ~36 для git, debugging, code review, migrations и т.д.
+
+**Ported (53) — импортированы из проверенных источников:**
+
+- *HuggingFace стек:* `huggingface-hub`, `huggingface-datasets`, `transformers`, `peft`, `accelerate`
+- *Тренировка LLM:* `axolotl`, `unsloth`, `TRL`, `vLLM`, `llama.cpp`
+- *Эвалуация:* `lm-eval-harness`
+- *Code-review / git:* `code-review`, `github-flow`
+- *Research / writing:* `arxiv`, `latex-paper`, `bibtex`
+- *Прочее:* `dspy`, `outlines`, `pydantic-ai`, `langchain`
+
+Источники: [obra/superpowers](https://github.com/obra/superpowers), [anthropics/skills](https://github.com/anthropics/skills), [NousResearch/Hermes Agent](https://github.com/NousResearch/hermes-agent), [getsentry](https://github.com/getsentry), [getstack/gstack](https://github.com/getstack).
+
+#### MCP-серверы — `.mcp.json`
+
+[Model Context Protocol](https://modelcontextprotocol.io/) — стандартизированные внешние инструменты, доступные Claude.
+
+| Сервер | Что даёт |
+|:--|:--|
+| **`filesystem`** | Низкоуровневые fs-операции, scoped к workspace (`@modelcontextprotocol/server-filesystem`). |
+| **`github`** | Issues / PR / repo операции. Требует `GITHUB_TOKEN` в env. |
+| **`tmux`** | Управление tmux-сессиями (создать / отправить команду / прочитать буфер). |
+| **`context7`** | Свежая документация библиотек, актуальнее обучающих данных Claude. |
+
+#### Память — `.claude/memory/`
+
+Постоянная между сессиями. Состояние, которое Claude Code записывает и читает.
+
+| Директория | Назначение |
+|:--|:--|
+| **`recipes/`** | Решённые проблемы с regex-паттерном для матчинга. Hook `auto_fix_suggest` читает их при падении тестов и подсказывает фикс. Записываются скиллом `record-recipe` после фразы «запомни». |
+| **`decisions/`** | Архитектурные решения проекта (что выбрали, почему, что отклонили). Помогает при ревью PR и онбординге. |
+| **`gotchas/`** | Подводные камни — нюансы которые легко не заметить (race conditions, edge cases, неочевидные зависимости). |
+| **`style/`** | Кодовый стиль проекта в формате памятки (отступы, naming, error handling). Подгружается в контекст code-writer субагента. |
+
+</details>
+
 ---
 
 ## 🎯 Триггеры
