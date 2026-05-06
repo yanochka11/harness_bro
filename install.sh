@@ -29,7 +29,7 @@
 set -euo pipefail
 
 # ── self-bootstrap (when piped through curl, git-clone the repo) ───
-HARNESS_REPO="${HARNESS_REPO:-https://github.com/anthropics/harness_bro.git}"
+HARNESS_REPO="${HARNESS_REPO:-https://github.com/yanochka11/harness_bro.git}"
 HARNESS_BRANCH="${HARNESS_BRANCH:-main}"
 
 # Determine: are we running from a real file with .claude/ alongside,
