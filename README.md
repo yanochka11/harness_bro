@@ -66,9 +66,12 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
 #### После установки
 
 ```bash
-cd ~/harness         # workspace, где лежит .claude/
-claude               # интерактивная TUI-сессия Claude Code
+cd ~/harness                  # workspace, где лежит .claude/
+which claude                  # должен указывать на npm prefix; см. ниже если алиас
+claude                        # интерактивная TUI-сессия Claude Code
 ```
+
+> Если `claude` в shell прокинут на собственный alias (например `claude-account` с `CLAUDE_CONFIG_DIR=~/.claude-account` для multi-account setup), запускайте свою обёртку, а не дефолтный `claude`. Установщик от этого не зависит — только проверяет наличие CLI и предупреждает.
 
 Внутри сессии:
 

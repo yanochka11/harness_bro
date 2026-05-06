@@ -508,8 +508,9 @@ function Inside() {
 // ─── Install ──────────────────────────────────────────────────────
 function Install() {
   const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
-  const post = `cd ~/harness        # workspace, где лежит .claude/
-claude              # интерактивная TUI-сессия Claude Code`;
+  const post = `cd ~/harness                  # workspace, где лежит .claude/
+which claude                  # путь должен указывать на npm prefix
+claude                        # интерактивная TUI-сессия Claude Code`;
   const proxy = `export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
 export HTTP_PROXY="$HTTPS_PROXY"
 export NO_PROXY="localhost,127.0.0.1"
@@ -561,7 +562,7 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
       e(FadeUp, { delay:0.15 },
         e(Block, {
           num:2, title:'Запустить',
-          body:'cd в созданный workspace и запустить Claude Code. Откроется интерактивная TUI-сессия в терминале.',
+          body:'cd в созданный workspace и запустить Claude Code. Откроется интерактивная TUI-сессия в терминале. Если у вас multi-account setup и claude — это alias (например claude-account c CLAUDE_CONFIG_DIR), вызывайте свою обёртку, не дефолтный claude.',
           cmd: post,
           comment:'Внутри: /env, /gpu, /git-status — снимки состояния. Любой текст вне slash-команды — запрос Claude. Выход: Ctrl+D или /exit.',
         })
@@ -659,35 +660,6 @@ function Triggers() {
   );
 }
 
-// ─── Final CTA ────────────────────────────────────────────────────
-function FinalCTA() {
-  const cmd = `curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
-  return e('section', { className:'py-32 border-t border-soft relative overflow-hidden aurora-bg' },
-    e('div', { className:'absolute inset-0 grid-bg pointer-events-none z-0' }),
-    e('div', { className:'relative max-w-4xl mx-auto px-6 text-center z-10' },
-      e(FadeUp, null,
-        e('h2', { className:'text-4xl md:text-6xl font-semibold tracking-tighter mb-6 text-ink-900' },
-          'Установка ',
-          e('span', { className:'text-gradient' }, 'одной командой'),
-        ),
-        e('p', { className:'text-base text-ink-600 max-w-xl mx-auto mb-10 leading-relaxed' },
-          'Скопировать и вставить в терминал. ', e('code', { className:'font-mono text-em-300' }, 'rm -rf ~/harness'), ' если не подойдёт.'
-        ),
-        e('div', { className:'border border-em-400/30 rounded-xl bg-ink-50/80 backdrop-blur max-w-3xl mx-auto glow' },
-          e('div', { className:'flex items-center justify-between border-b border-soft px-4 py-2.5' },
-            e('span', { className:'font-mono text-xs text-em-300' }, '$ install'),
-            e(CopyButton, { text: cmd }),
-          ),
-          e('div', { className:'p-5 font-mono text-sm md:text-base overflow-x-auto no-scrollbar text-left text-ink-800 leading-relaxed' },
-            e('span', { className:'text-em-400 select-none' }, '$ '),
-            'curl -fsSL ', e('span', { className:'text-ink-700' }, 'https://.../install.sh'), e('span', { className:'text-em-400' }, ' | '), 'bash'
-          ),
-        ),
-      )
-    )
-  );
-}
-
 // ─── Footer ───────────────────────────────────────────────────────
 function Footer() {
   return e('footer', { className:'border-t border-soft py-16' },
@@ -739,7 +711,6 @@ function App() {
     e(Inside),
     e(Install),
     e(Triggers),
-    e(FinalCTA),
     e(Footer),
   );
 }
