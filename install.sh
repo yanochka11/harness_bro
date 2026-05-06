@@ -20,7 +20,7 @@
 #
 # Флаги:
 #   --target <path>          куда поставить (по умолчанию: $PWD; если $PWD=$HOME → $HOME/harness_bro)
-#   --tools | --no-tools     ставить ruff/mypy/pytest через pip
+#   --tools | --no-tools     ставить ruff/mypy/pytest/pyright через pip (дефолт: ставить)
 #   --banned-paths <a,b,c>   запретить запись в эти пути (env HARNESS_BANNED_PATHS)
 #   --yes | -y               без интерактива, использовать дефолты
 #   --no-launch              не запускать claude автоматически в конце
@@ -316,18 +316,28 @@ PYEOF
 fi
 
 # ── install Python tools ──────────────────────────────────────────
+# Дефолт: ставим. Хуки validate_python.py и slash-команды /lint /pytest
+# /typecheck зависят от ruff/mypy/pytest — без них harness работает в
+# деградированном режиме. --no-tools чтобы пропустить.
 if [ -z "$INSTALL_TOOLS" ]; then
-    if [ -t 0 ] && [ "$NON_INTERACTIVE" -eq 0 ]; then
-        read -rp "Install ruff + mypy + pytest via pip? [y/N]: " yn
-        INSTALL_TOOLS="${yn:-n}"
+    if [ "$NON_INTERACTIVE" -eq 0 ]; then
+        if [ -t 0 ]; then
+            read -rp "Install ruff + mypy + pytest + pyright via pip? [Y/n]: " yn
+            INSTALL_TOOLS="${yn:-y}"
+        elif [ -r /dev/tty ]; then
+            read -rp "Install ruff + mypy + pytest + pyright via pip? [Y/n]: " yn </dev/tty
+            INSTALL_TOOLS="${yn:-y}"
+        else
+            INSTALL_TOOLS="y"
+        fi
     else
-        INSTALL_TOOLS="n"
+        INSTALL_TOOLS="y"
     fi
 fi
 if [[ "$INSTALL_TOOLS" =~ ^[Yy] ]]; then
-    info "Installing Python dev tools..."
-    if pip install --quiet --upgrade ruff mypy pytest pyright; then
-        ok "  ruff / mypy / pytest / pyright"
+    info "Installing Python dev tools (ruff / mypy / pytest / pyright)..."
+    if pip install --quiet --upgrade ruff mypy pytest pyright 2>&1 | tail -5; then
+        ok "  installed"
     else
         warn "  pip install failed — поставьте позже: pip install ruff mypy pytest pyright"
     fi

@@ -94,9 +94,10 @@ Ctrl+D  или  /exit         выход
 
 ```
 --target <путь>          куда поставить (по умолчанию $PWD; если $PWD=$HOME → $HOME/harness_bro)
---tools / --no-tools     ставить ruff + mypy + pytest
+--tools / --no-tools     ставить ruff + mypy + pytest + pyright (дефолт: ставить)
 --banned-paths a,b,c     запрет записи в эти пути (для hook nfs_guard)
 --yes                    использовать дефолты, ничего не спрашивать
+--no-launch              не запускать claude автоматически в конце
 ```
 
 Передаются через `bash -s --`:
