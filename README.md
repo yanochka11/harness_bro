@@ -8,15 +8,11 @@
 
 <br/>
 
-[![Site](https://img.shields.io/badge/site-yanochka11.github.io-10b981?style=for-the-badge&logo=githubpages&logoColor=white)](https://yanochka11.github.io/harness_bro/)
 [![GitHub](https://img.shields.io/badge/github-yanochka11/harness__bro-1f1f23?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yanochka11/harness_bro)
 [![License](https://img.shields.io/badge/license-MIT-eab308?style=for-the-badge)](LICENSE)
+[![Install](https://img.shields.io/badge/install-30s-10b981?style=for-the-badge)](#-установка)
 
 <sub><code>v1.0</code> · Linux · macOS · WSL2 · `python ≥ 3.10`</sub>
-
-<br/>
-
-🌐 **[yanochka11.github.io/harness_bro](https://yanochka11.github.io/harness_bro/)** — сайт с интерактивной презентацией
 
 <br/>
 
@@ -228,8 +224,6 @@ echo 'Что показывает: !`echo привет`' > .claude/commands/foo.
 ---
 
 <div align="center">
-
-### 🌐 [yanochka11.github.io/harness_bro](https://yanochka11.github.io/harness_bro/)
 
 <sub>Built on top of <a href="https://claude.ai/code">Claude Code</a> · Skills imported from <a href="https://github.com/obra/superpowers">superpowers</a>, <a href="https://github.com/anthropics/skills">anthropic-skills</a>, <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a>, <a href="https://github.com/getsentry">sentry</a>, <a href="https://github.com/getstack">gstack</a></sub>
 
