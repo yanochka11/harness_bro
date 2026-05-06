@@ -197,10 +197,10 @@ if [ -z "$TARGET" ]; then
     if [ "$NON_INTERACTIVE" -eq 0 ]; then
         # Try TTY first (regular invocation), fallback to /dev/tty (curl|bash piping).
         if [ -t 0 ]; then
-            read -rp "Install to [${DEFAULT_TARGET}]: " input
+            read -rp "Введите путь для установки harness_bro (Enter — использовать [${DEFAULT_TARGET}]): " input
             TARGET="${input:-$DEFAULT_TARGET}"
         elif [ -r /dev/tty ]; then
-            read -rp "Install to [${DEFAULT_TARGET}]: " input < /dev/tty
+            read -rp "Введите путь для установки harness_bro (Enter — использовать [${DEFAULT_TARGET}]): " input < /dev/tty
             TARGET="${input:-$DEFAULT_TARGET}"
         else
             TARGET="$DEFAULT_TARGET"
