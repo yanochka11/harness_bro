@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>harness_bro — конфигурация .claude/ для Claude Code</title>
-<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap и поддержкой proxy." />
+<meta name="description" content="Конфигурация Claude Code для ML/AI-разработки: 6 хуков, 18 быстрых команд, 99 скиллов, 5 субагентов, 7 MCP-серверов, постоянная память, защита от утечки ключей. Установщик с self-bootstrap, поддержкой conda и proxy." />
 <meta property="og:title" content="harness_bro" />
 <meta property="og:description" content="Конфигурация .claude/ для Claude Code, заточенная под ML/AI-разработку." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -375,7 +375,7 @@ function Hero() {
 function StatsLine() {
   const stats = [
     [99,'скиллов'], [6,'хуков'], [5,'субагентов'],
-    [18,'команд'], [4,'MCP'], [43,'allow-list'],
+    [18,'команд'], [7,'MCP'], [43,'allow-list'],
   ];
   return e('section', { className: 'border-y border-soft relative' },
     e('div', { className: 'absolute inset-0 bg-gradient-to-b from-em-500/[0.02] to-transparent pointer-events-none' }),
@@ -453,8 +453,8 @@ function Inside() {
     { name:'agents/',   n:'5',  desc:'bug-hunter · code-writer · runner · paper-reader · researcher' },
     { name:'hooks/',    n:'6',  desc:'nfs_guard · secret_guard · validate_python · auto_save_skill · auto_fix_suggest · statusline' },
     { name:'commands/', n:'18', desc:'/lint /format /typecheck /pytest /coverage /tex-build · /env /gpu /procs /diskcfs /hf-cache · /git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp' },
-    { name:'skills/',   n:'99', desc:'46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, lm-eval-harness, code-review, github-flow, arxiv, latex, data-viz, diagrams, dspy, outlines)' },
-    { name:'.mcp.json', n:'4',  desc:'filesystem · github · tmux · context7' },
+    { name:'skills/',   n:'99', desc:'46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, evaluating-llms-harness, code-review, github-pr-workflow, arxiv, latex-writing, data-viz, diagrams, dspy, outlines)' },
+    { name:'.mcp.json', n:'7',  desc:'filesystem · github · tmux · context7 · memory · sequential-thinking · arxiv' },
     { name:'memory/',   n:'',   desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
   ];
   return e('section', { id:'inside', className:'border-t border-soft py-32 relative' },
@@ -721,7 +721,7 @@ function Footer() {
         ', ',
         e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
         ', ',
-        e('a', { href:'https://github.com/getstack', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
+        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
         '.'
       )
     )

@@ -34,13 +34,19 @@
 - **runner** — старт/мониторинг/стоп долгих процессов. Триггеры: запусти, train, fine-tune, evaluate.
 - **paper-reader** — конспект arxiv/HF/PDF статей. Триггеры: прочитай статью, summarize paper.
 
-## Slash commands (17)
-- **Code (5):** `/lint`, `/format`, `/typecheck`, `/pytest`, `/coverage`
+## Slash commands (18)
+- **Code (6):** `/lint`, `/format`, `/typecheck`, `/pytest`, `/coverage`, `/tex-build`
 - **Окружение (5):** `/env`, `/gpu`, `/procs`, `/diskcfs`, `/hf-cache`
 - **Состояние (7):** `/git-status`, `/find-todo`, `/last-error`, `/deps`, `/wandb-runs`, `/run-dirs`, `/clean-tmp`
 
-## MCP servers (`.mcp.json` в корне)
-- **filesystem**, **github**, **tmux**, **context7** — см. `.mcp.json`
+## MCP servers (`.mcp.json` в корне, 7 шт)
+- **filesystem** — fs-операции, scoped к workspace
+- **github** — issues/PR/repo (требует `GITHUB_TOKEN`)
+- **tmux** — управление сессиями
+- **context7** — свежая документация библиотек
+- **memory** — knowledge graph между сессиями (`mcp-graph.json`)
+- **sequential-thinking** — структурированные цепочки рассуждений
+- **arxiv** — поиск/скачивание arxiv-статей (для `paper-reader`)
 
 ## Hooks (`.claude/hooks/`, зарегистрированы в settings.json)
 1. **nfs_guard.py** — блокирует записи в paths из `$HARNESS_BANNED_PATHS` env var (опционально).

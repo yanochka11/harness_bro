@@ -31,6 +31,30 @@
         "-y",
         "@upstash/context7-mcp@latest"
       ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "@@WORKSPACE@@/.claude/memory/mcp-graph.json"
+      }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "arxiv": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "arxiv-mcp-server"
+      ]
     }
   }
 }

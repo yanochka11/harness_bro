@@ -35,7 +35,33 @@
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash
 ```
 
-Скрипт проверяет зависимости (`python ≥ 3.10`, `node`, `npm`, `git`), клонирует репо во временную директорию, разворачивает `.claude/` в `~/harness`. **Идемпотентный** — можно перезапускать.
+Скрипт проверяет зависимости (`python ≥ 3.10`, `git` — обязательны; `node`+`npm` — нужны только для MCP-серверов через `npx`), клонирует репо во временную директорию, разворачивает `.claude/` в `~/harness`. **Идемпотентный** — можно перезапускать.
+
+<details>
+<summary><b>🐍 Под conda</b></summary>
+
+```bash
+# (1) активировать env с python ≥ 3.10
+conda activate ваше-окружение
+
+# (2) проверить
+python --version           # должно быть >=3.10
+which python && which git  # доступны в PATH
+
+# (3) (если будут использоваться MCP) поставить node в этот env
+conda install -c conda-forge nodejs                 # >=20.x
+
+# (4) поставить Claude Code CLI
+npm install -g @anthropic-ai/claude-code
+which claude                                         # должен указывать на npm prefix
+
+# (5) запустить установщик
+curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash
+```
+
+Если `claude` в shell прокинут на алиас (например `claude-account` для multi-account setup через `CLAUDE_CONFIG_DIR`), используйте свою обёртку. Установщик не зависит от PATH'а `claude` — только проверяет наличие CLI и предупреждает.
+
+</details>
 
 #### После установки
 
@@ -87,9 +113,11 @@ commands/      18    /lint /format /typecheck /pytest /coverage /tex-build
                      /git-status /find-todo /last-error /deps /wandb-runs
                      /run-dirs /clean-tmp
 skills/        99    46 curated + 53 ported (HuggingFace, axolotl, unsloth, TRL,
-                     vLLM, llama.cpp, lm-eval-harness, code-review, github-flow,
-                     arxiv, latex, data-viz, diagrams, dspy, outlines)
-mcp/            4    filesystem · github · tmux · context7
+                     vLLM, llama.cpp, evaluating-llms-harness, code-review,
+                     github-pr-workflow, arxiv, latex, data-viz, diagrams,
+                     dspy, outlines)
+mcp/            7    filesystem · github · tmux · context7
+                     memory · sequential-thinking · arxiv
 memory/              recipes/ · decisions/ · gotchas/ · style/
 ```
 
@@ -182,27 +210,32 @@ Read-only снимки состояния. Вводятся как `/<name>` в 
 
 **Curated (46) — собственные / ключевые:**
 
-- *Workflow:* `verify-claim`, `web-research`, `record-recipe`, `self-improve`
-- *Безопасность:* `secret-guard`, `command-injection-guard`
-- *Документы:* `latex-writing`, `markdown-formatting`
+- *Workflow:* `verify-claim`, `web-research`, `record-recipe`, `self-improve`, `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`
+- *Безопасность:* `secret-guard`, `pre-commit-guard`
+- *Документы:* `docx`, `pdf`, `pptx`, `xlsx`, `latex-writing`
 - *Визуализация:* `data-viz` (matplotlib / seaborn / plotly), `diagrams` (mermaid / d2 / plantuml)
-- *Поиск кода:* `smart-grep`
-- + ещё ~36 для git, debugging, code review, migrations и т.д.
+- *Поиск и работа с кодом:* `smart-grep`, `code-archaeology`, `dependency-audit`, `perf-profiler`
+- *Эвалуация:* `evals/` (eval-audit, write-judge-prompt, error-analysis, …)
+- *Скилл-инфраструктура:* `skill-creator`, `mcp-builder`, `meta/` (skill-factory, skill-optimizer, super-hermes)
+- *Прочее:* `using-git-worktrees`, `verification-before-completion`, `requesting-code-review`, `finishing-a-development-branch`, `webapp-testing`, `async-task-runner`, `gstack/` (investigate, plan-eng-review, review)
 
 **Ported (53) — импортированы из проверенных источников:**
 
-- *HuggingFace стек:* `huggingface-hub`, `huggingface-datasets`, `transformers`, `peft`, `accelerate`
-- *Тренировка LLM:* `axolotl`, `unsloth`, `TRL`, `vLLM`, `llama.cpp`
-- *Эвалуация:* `lm-eval-harness`
-- *Code-review / git:* `code-review`, `github-flow`
-- *Research / writing:* `arxiv`, `latex-paper`, `bibtex`
-- *Прочее:* `dspy`, `outlines`, `pydantic-ai`, `langchain`
+- *HuggingFace стек:* `huggingface-hub`, `huggingface-datasets`, `huggingface-llm-trainer`, `huggingface-best`, `huggingface-local-models`, `huggingface-gradio`, `huggingface-papers`, `huggingface-trackio`, `hf-cli`, `hf-mcp`
+- *Тренировка LLM:* `axolotl`, `unsloth`, `fine-tuning-with-trl`, `serving-llms-vllm`, `llama-cpp`
+- *Эвалуация:* `evaluating-llms-harness`, `huggingface-community-evals`
+- *Code-review / git:* `code-review`, `code-simplifier`, `iterate-pr`, `pr-writer`, `github-pr-workflow`, `gh-review-requests`, `github-code-review`, `github-issues`, `github-repo-management`, `github-auth`, `gha-security-review`, `commit`, `create-branch`, `find-bugs`, `security-review`
+- *Research / writing:* `arxiv`, `research-paper-writing`, `huggingface-paper-publisher`, `doc-coauthoring`
+- *Tooling / dev:* `weights-and-biases`, `python-debugpy`, `jupyter-live-kernel`, `prompt-optimizer`, `claude-code`, `claude-settings-audit`
+- *LLM-фреймворки:* `dspy`, `outlines`, `huggingface-tool-builder`
+- *Скилл-фабрика:* `skill-authoring`, `skill-writer`, `skill-scanner`, `subagent-driven-development`, `native-mcp`
+- *Workflow:* `plan`, `spike`, `codebase-inspection`
 
-Источники: [obra/superpowers](https://github.com/obra/superpowers), [anthropics/skills](https://github.com/anthropics/skills), [NousResearch/Hermes Agent](https://github.com/NousResearch/hermes-agent), [getsentry](https://github.com/getsentry), [getstack/gstack](https://github.com/getstack).
+Источники: [obra/superpowers](https://github.com/obra/superpowers), [anthropics/skills](https://github.com/anthropics/skills), [NousResearch/hermes-agent](https://github.com/NousResearch/hermes-agent), [getsentry](https://github.com/getsentry), [garrytan/gstack](https://github.com/garrytan/gstack).
 
 #### MCP-серверы — `.mcp.json`
 
-[Model Context Protocol](https://modelcontextprotocol.io/) — стандартизированные внешние инструменты, доступные Claude.
+[Model Context Protocol](https://modelcontextprotocol.io/) — стандартизированные внешние инструменты, доступные Claude. Все запускаются через `npx`, лениво — на первый вызов.
 
 | Сервер | Что даёт |
 |:--|:--|
@@ -210,6 +243,28 @@ Read-only снимки состояния. Вводятся как `/<name>` в 
 | **`github`** | Issues / PR / repo операции. Требует `GITHUB_TOKEN` в env. |
 | **`tmux`** | Управление tmux-сессиями (создать / отправить команду / прочитать буфер). |
 | **`context7`** | Свежая документация библиотек, актуальнее обучающих данных Claude. |
+| **`memory`** | Knowledge graph между сессиями (`@modelcontextprotocol/server-memory`). Граф сущностей и связей, persists в `.claude/memory/mcp-graph.json`. |
+| **`sequential-thinking`** | Структурированные цепочки рассуждений (`@modelcontextprotocol/server-sequential-thinking`). Полезно при дебаге сложных гипотез. |
+| **`arxiv`** | Поиск и скачивание arxiv-статей (`arxiv-mcp-server`). Дополняет субагент `paper-reader`. |
+
+При первом старте Claude Code попросит подтвердить trust для каждого `.mcp.json`-сервера — это защита от автоматического запуска кода. Подтверждайте только знакомые.
+
+#### Рекомендуемые плагины — `/plugin`
+
+Установить через интерактивный `/plugin` в Claude Code TUI. Хорошо ложатся поверх harness_bro:
+
+| Плагин | Что даёт |
+|:--|:--|
+| **`superpowers`** | Набор обязательных рабочих скиллов (brainstorming, writing-plans, TDD, systematic-debugging, verification-before-completion) с триггерами и проверкой использования. |
+| **`pr-review-toolkit`** | `/review-pr` — мульти-агентный обзор pull-request'а. |
+| **`feature-dev`** | Управляемая разработка фичи с архитектурным фокусом и пониманием кодовой базы. |
+| **`skill-creator`** | Создание / редактирование / измерение performance скиллов. Дополняет родной `record-recipe`. |
+| **`frontend-design`** | Production-grade frontend (если фронт нужен). Уходит от generic AI-эстетики. |
+| **`ralph-loop`** | Loop-агент для повторяющихся проверок (status, sweep). |
+| **`serena`** | Code intelligence через LSP-подобный backend, ускоряет навигацию. |
+| **`github`** | Расширенные операции с GitHub (issues, PRs, releases), дополняет MCP `github`. |
+
+Плагины и skills coexist: плагин-скиллы регистрируются с namespace (`superpowers:brainstorming`), filesystem-скиллы из `.claude/skills/curated/` подгружаются по своим именам.
 
 #### Память — `.claude/memory/`
 
@@ -263,14 +318,14 @@ Read-only снимки состояния. Вводятся как `/<name>` в 
 ```bash
 export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
 export HTTP_PROXY="$HTTPS_PROXY"
-export NO_PROXY="localhost,127.0.0.1"
+export NO_PROXY="localhost,127.0.0.1,.cluster.local"
 
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash
 ```
 
 Установщик находит `HTTPS_PROXY`, маскирует пароль в логах, прокидывает в `npm config`, проверяет доступность `github.com`. При недоступности — печатает подсказку.
 
-> ⚠ Не вставляйте credentials в код или git. Только env vars или `~/.netrc`.
+> ⚠ **Не публикуйте proxy URL с паролем в чате, документации, коммитах, скриншотах.** Храните в `~/.bashrc` / `~/.zshrc` / `~/.netrc` (chmod 600) или secrets-менеджере. Если случайно засветили — смените пароль на проксе сразу.
 
 ---
 
@@ -344,7 +399,7 @@ echo 'Что показывает: !`echo привет`' > .claude/commands/foo.
 
 <div align="center">
 
-<sub>Built on top of <a href="https://claude.ai/code">Claude Code</a> · Skills imported from <a href="https://github.com/obra/superpowers">superpowers</a>, <a href="https://github.com/anthropics/skills">anthropic-skills</a>, <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a>, <a href="https://github.com/getsentry">sentry</a>, <a href="https://github.com/getstack">gstack</a></sub>
+<sub>Built on top of <a href="https://claude.ai/code">Claude Code</a> · Skills imported from <a href="https://github.com/obra/superpowers">superpowers</a>, <a href="https://github.com/anthropics/skills">anthropic-skills</a>, <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a>, <a href="https://github.com/getsentry">sentry</a>, <a href="https://github.com/garrytan/gstack">gstack</a></sub>
 
 <sub><a href="https://github.com/yanochka11/harness_bro">github.com/yanochka11/harness_bro</a> · <a href="LICENSE">MIT</a></sub>
 

@@ -118,12 +118,24 @@ fi
 # ── prereqs ───────────────────────────────────────────────────────
 info "Checking prerequisites..."
 missing=()
-for tool in python3 node npm git; do
+soft_missing=()
+# python3, git — обязательны (нужны самому скрипту и хукам)
+for tool in python3 git; do
     if command -v "$tool" >/dev/null 2>&1; then
         ok "$tool — $(command -v "$tool")"
     else
         err "$tool — not found"
         missing+=("$tool")
+    fi
+done
+# node/npm — нужны только для MCP-серверов (запускаются через npx).
+# Без них всё остальное работает; предупреждаем, но не падаем.
+for tool in node npm; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        ok "$tool — $(command -v "$tool")"
+    else
+        warn "$tool — not found (нужен только для MCP-серверов через npx)"
+        soft_missing+=("$tool")
     fi
 done
 
@@ -139,10 +151,14 @@ if command -v python3 >/dev/null; then
 fi
 
 if [ ${#missing[@]} -gt 0 ]; then
-    err "Missing: ${missing[*]}"
-    say "  Install on Debian/Ubuntu: sudo apt install python3 nodejs npm git"
-    say "  Install on macOS:          brew install python node git"
+    err "Missing required: ${missing[*]}"
+    say "  Install on Debian/Ubuntu: sudo apt install python3 git"
+    say "  Install on macOS:          brew install python git"
     exit 1
+fi
+if [ ${#soft_missing[@]} -gt 0 ]; then
+    say "  ${DIM}MCP-серверы (filesystem/github/tmux/context7) не запустятся без node+npm.${N}"
+    say "  ${DIM}Если нужны: sudo apt install nodejs npm  /  brew install node${N}"
 fi
 
 # Claude Code CLI
@@ -191,42 +207,53 @@ if [ ! -d "$SRC/.claude" ]; then
     exit 1
 fi
 
-# ── copy config ───────────────────────────────────────────────────
-info "Copying Claude Code config..."
-
-backup() {
-    local p="$1"
-    if [ -e "$p" ] && [ ! -e "$p.bak" ]; then
-        cp -r "$p" "$p.bak"
-        ok "  backed up $(basename "$p") → $(basename "$p").bak"
-    fi
-    return 0
-}
-
-backup "$TARGET/.claude"
-backup "$TARGET/CLAUDE.md"
-backup "$TARGET/.mcp.json"
-backup "$TARGET/.gitignore"
-
-# Copy .claude/ (excluding state/sessions/cache)
-mkdir -p "$TARGET/.claude"
-for d in agents commands hooks skills memory; do
-    if [ -d "$SRC/.claude/$d" ]; then
-        cp -r "$SRC/.claude/$d" "$TARGET/.claude/"
-    fi
-done
-cp "$SRC/.claude/settings.json" "$TARGET/.claude/settings.json"
-ok "  .claude/{agents,commands,hooks,skills,memory,settings.json}"
-
-cp "$SRC/.gitignore" "$TARGET/.gitignore"
-ok "  .gitignore"
-
-if [ -f "$SRC/README.md" ]; then
-    cp "$SRC/README.md" "$TARGET/README.md"
-    ok "  README.md"
+# Защита от self-install (когда TARGET == SRC). Backup забил бы 100+ MB
+# state/credentials в .claude.bak, а cp падает на «same file». Просто
+# пропускаем копирование — рендеры CLAUDE.md/.mcp.json всё равно нужны.
+SAME_DIR=0
+if [ "$(readlink -f "$SRC")" = "$(readlink -f "$TARGET")" ]; then
+    SAME_DIR=1
+    warn "TARGET совпадает с SRC ($SRC) — пропускаю копирование .claude/ и backup"
 fi
-if [ -f "$SRC/LICENSE" ]; then
-    cp "$SRC/LICENSE" "$TARGET/LICENSE"
+
+# ── copy config ───────────────────────────────────────────────────
+if [ "$SAME_DIR" -eq 0 ]; then
+    info "Copying Claude Code config..."
+
+    backup() {
+        local p="$1"
+        if [ -e "$p" ] && [ ! -e "$p.bak" ]; then
+            cp -r "$p" "$p.bak"
+            ok "  backed up $(basename "$p") → $(basename "$p").bak"
+        fi
+        return 0
+    }
+
+    backup "$TARGET/.claude"
+    backup "$TARGET/CLAUDE.md"
+    backup "$TARGET/.mcp.json"
+    backup "$TARGET/.gitignore"
+
+    # Copy .claude/ (excluding state/sessions/cache)
+    mkdir -p "$TARGET/.claude"
+    for d in agents commands hooks skills memory; do
+        if [ -d "$SRC/.claude/$d" ]; then
+            cp -r "$SRC/.claude/$d" "$TARGET/.claude/"
+        fi
+    done
+    cp "$SRC/.claude/settings.json" "$TARGET/.claude/settings.json"
+    ok "  .claude/{agents,commands,hooks,skills,memory,settings.json}"
+
+    cp "$SRC/.gitignore" "$TARGET/.gitignore"
+    ok "  .gitignore"
+
+    if [ -f "$SRC/README.md" ]; then
+        cp "$SRC/README.md" "$TARGET/README.md"
+        ok "  README.md"
+    fi
+    if [ -f "$SRC/LICENSE" ]; then
+        cp "$SRC/LICENSE" "$TARGET/LICENSE"
+    fi
 fi
 
 # ── render CLAUDE.md from template ────────────────────────────────
@@ -282,8 +309,11 @@ if [ -z "$INSTALL_TOOLS" ]; then
 fi
 if [[ "$INSTALL_TOOLS" =~ ^[Yy] ]]; then
     info "Installing Python dev tools..."
-    pip install --quiet --upgrade ruff mypy pytest pyright || warn "pip install failed (you can do it later)"
-    ok "  ruff / mypy / pytest / pyright"
+    if pip install --quiet --upgrade ruff mypy pytest pyright; then
+        ok "  ruff / mypy / pytest / pyright"
+    else
+        warn "  pip install failed — поставьте позже: pip install ruff mypy pytest pyright"
+    fi
 fi
 
 # ── done ──────────────────────────────────────────────────────────
@@ -314,7 +344,7 @@ ${BOLD}Quick reference once in Claude:${N}
 ${BOLD}Docs:${N}
   $TARGET/README.md           # full guide
   $TARGET/CLAUDE.md           # what Claude reads at session start
-  $TARGET/.claude/skills/     # 90+ skills available
+  $TARGET/.claude/skills/     # 99 skills (46 curated + 53 ported)
 
 Happy coding!
 EOF
