@@ -168,10 +168,40 @@
     transition: opacity 0.2s;
     will-change: left, top;
   }
+
+  /* skip-link для клавиатурной навигации */
+  .skip-link {
+    position: absolute; top: -40px; left: 8px; z-index: 100;
+    padding: 8px 16px; background: #34d399; color: #08080a;
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600;
+    border-radius: 6px; text-decoration: none;
+    transition: top 0.2s;
+  }
+  .skip-link:focus { top: 8px; outline: 2px solid #d1fae5; outline-offset: 2px; }
+
+  /* focus-visible — заметно для клавиатуры, не назойливо для мыши */
+  :focus-visible {
+    outline: 2px solid #34d399;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* prefers-reduced-motion: уважаем настройку ОС */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .aurora-bg::before, .aurora-bg::after { opacity: 0.15; }
+    .cursor-glow { display: none !important; }
+  }
 </style>
 </head>
 <body class="font-sans antialiased min-h-screen">
 
+<a href="#main" class="skip-link">Пропустить навигацию</a>
 <div id="root"></div>
 
 <noscript>
@@ -206,6 +236,8 @@ const GITHUB_URL = 'https://github.com/yanochka11/harness_bro';
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false);
   return e('button', {
+    type: 'button',
+    'aria-label': copied ? 'Скопировано' : 'Скопировать команду в буфер обмена',
     onClick: async () => {
       try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(()=>setCopied(false), 1800); } catch {}
     },
@@ -272,6 +304,7 @@ function Nav() {
     return () => window.removeEventListener('scroll', h);
   }, []);
   return e('nav', {
+    'aria-label': 'Главная навигация',
     className: `fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
       scrolled ? 'bg-ink-0/85 backdrop-blur-md border-b border-soft' : ''
     }`
@@ -288,11 +321,11 @@ function Nav() {
         e('a', { href: '#triggers', className: 'hover:text-ink-900 transition-colors' }, 'Триггеры'),
       ),
       e('a', {
-        href: GITHUB_URL, target: '_blank', rel: 'noopener',
+        href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer',
         className: 'text-sm text-ink-700 hover:text-em-400 transition-colors flex items-center gap-1.5',
       },
         e('span', null, 'GitHub'),
-        e('span', { className: 'text-ink-500' }, '↗'),
+        e('span', { className: 'text-ink-500', 'aria-hidden': 'true' }, '↗'),
       ),
     )
   );
@@ -375,14 +408,14 @@ function Hero() {
         transition: { duration: 0.8, delay: 0.45 },
         className: 'mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-ink-600'
       },
-        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener',
+        e('a', { href: GITHUB_URL, target: '_blank', rel: 'noopener noreferrer',
           className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
           'github.com/yanochka11/harness_bro', e('span', { className: 'text-ink-500' }, '↗')
         ),
         e('span', { className: 'text-ink-400' }, '·'),
         e('a', { href: '#install',
           className: 'flex items-center gap-1.5 link-u hover:text-em-400 transition-colors' },
-          'Подробнее об установке', e('span', null, '↓'),
+          'Подробнее об установке', e('span', { 'aria-hidden': 'true' }, '↓'),
         ),
       ),
     )
@@ -473,7 +506,7 @@ function Inside() {
     { name:'commands/', n:'18', desc:'/lint /format /typecheck /pytest /coverage /tex-build · /env /gpu /procs /diskcfs /hf-cache · /git-status /find-todo /last-error /deps /wandb-runs /run-dirs /clean-tmp' },
     { name:'skills/',   n:'82', desc:'29 curated + 53 ported в плоской структуре (видны в /skills). Плюс 17 sub-skills внутри портов skill-factory · super-hermes · evals · gstack — подгружаются on-demand. Покрытие: HuggingFace, axolotl, unsloth, TRL, vLLM, llama.cpp, evaluating-llms-harness, code-review, github-pr-workflow, arxiv, latex-writing, data-viz, diagrams, dspy, outlines.' },
     { name:'.mcp.json', n:'7',  desc:'filesystem · github · tmux · context7 · memory · sequential-thinking · arxiv' },
-    { name:'memory/',   n:'',   desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
+    { name:'memory/',   n:'4',  desc:'recipes/ (regex pattern для авто-фикса) · decisions/ · gotchas/ · style/' },
   ];
   return e('section', { id:'inside', className:'border-t border-soft py-32 relative' },
     e('div', { className:'absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-em-500/[0.04] blur-[100px] pointer-events-none' }),
@@ -530,7 +563,7 @@ function Install() {
 CLAUDE_CONFIG_DIR=$PWD/.claude-account claude   # запуск с per-project credentials`;
   const proxy = `export HTTPS_PROXY="http://USER:PASS@HOST:PORT"
 export HTTP_PROXY="$HTTPS_PROXY"
-export NO_PROXY="localhost,127.0.0.1"
+export NO_PROXY="localhost,127.0.0.1,.cluster.local"
 
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash`;
 
@@ -692,7 +725,7 @@ function Footer() {
           ),
         ),
         e('div', { className:'flex items-center gap-6 text-sm text-ink-600' },
-          e('a', { href: GITHUB_URL, target:'_blank', rel:'noopener', className:'link-u hover:text-em-400 transition-colors' }, 'GitHub'),
+          e('a', { href: GITHUB_URL, target:'_blank', rel:'noopener noreferrer', className:'link-u hover:text-em-400 transition-colors' }, 'GitHub'),
           e('a', { href:'#install',  className:'link-u hover:text-em-400 transition-colors' }, 'Установка'),
           e('a', { href:'#features', className:'link-u hover:text-em-400 transition-colors' }, 'Свойства'),
           e('a', { href:'#triggers', className:'link-u hover:text-em-400 transition-colors' }, 'Триггеры'),
@@ -700,17 +733,17 @@ function Footer() {
       ),
       e('div', { className:'pt-8 border-t border-soft text-xs text-ink-500 leading-relaxed' },
         'Built on top of ',
-        e('a', { href:'https://claude.ai/code', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Claude Code'),
+        e('a', { href:'https://claude.ai/code', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'Claude Code'),
         '. Skills imported from ',
-        e('a', { href:'https://github.com/obra/superpowers', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'superpowers'),
+        e('a', { href:'https://github.com/obra/superpowers', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'superpowers'),
         ', ',
-        e('a', { href:'https://github.com/anthropics/skills', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'anthropic-skills'),
+        e('a', { href:'https://github.com/anthropics/skills', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'anthropic-skills'),
         ', ',
-        e('a', { href:'https://github.com/NousResearch/hermes-agent', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'Hermes Agent'),
+        e('a', { href:'https://github.com/NousResearch/hermes-agent', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'Hermes Agent'),
         ', ',
-        e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
+        e('a', { href:'https://github.com/getsentry', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'sentry'),
         ', ',
-        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
+        e('a', { href:'https://github.com/garrytan/gstack', target:'_blank', rel:'noopener noreferrer', className:'hover:text-em-300 transition-colors link-u' }, 'gstack'),
         '.'
       )
     )
@@ -722,12 +755,14 @@ function App() {
   return e(React.Fragment, null,
     e(CursorGlow),
     e(Nav),
-    e(Hero),
-    e(StatsLine),
-    e(Features),
-    e(Inside),
-    e(Install),
-    e(Triggers),
+    e('main', { id: 'main' },
+      e(Hero),
+      e(StatsLine),
+      e(Features),
+      e(Inside),
+      e(Install),
+      e(Triggers),
+    ),
     e(Footer),
   );
 }
