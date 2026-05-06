@@ -1,11 +1,11 @@
 # harness_bro — Claude Code project context
 
 ## Working directory
-`@@WORKSPACE@@`
+`/mnt/virtual_ai0001071-04017_SR004-nfs1/NFS1-SR008/users/iana_kulichenko/alpha`
 
 ## Filesystem rules
-- Writeable: `@@WORKSPACE@@/**`
-- @@BANNED_RULE@@
+- Writeable: `/mnt/virtual_ai0001071-04017_SR004-nfs1/NFS1-SR008/users/iana_kulichenko/alpha/**`
+- No banned write-paths (set HARNESS_BANNED_PATHS env var to enable nfs_guard)
 - HF cache: `${HF_HOME:-~/.cache/huggingface}` (configurable via `$HF_HOME`)
 
 ## Style
@@ -23,7 +23,7 @@
 - Коммиты: small, present tense ("add X", не "added X").
 
 ## Long-running команды
-- `nohup … &` с логом в `@@WORKSPACE@@/runs/<task>/<ts>/`.
+- `nohup … &` с логом в `/mnt/virtual_ai0001071-04017_SR004-nfs1/NFS1-SR008/users/iana_kulichenko/alpha/runs/<task>/<ts>/`.
 - Не блокировать чат foreground'ом training/eval — делегировать subagent `runner`.
 - `pkill -TERM` (graceful), `-KILL` только если первое не сработало.
 

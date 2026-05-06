@@ -35,7 +35,9 @@
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash
 ```
 
-Скрипт проверяет зависимости (`python ≥ 3.10`, `git` — обязательны; `node`+`npm` — нужны только для MCP-серверов через `npx`), клонирует репо во временную директорию, разворачивает `.claude/` в `~/harness`. **Идемпотентный** — можно перезапускать.
+По умолчанию ставится в **текущую директорию**. Если запущено из `$HOME` — в `$HOME/harness_bro`. Можно ввести свой путь в промпте или передать `--target`.
+
+Скрипт проверяет зависимости (`python ≥ 3.10`, `git` — обязательны; `node`+`npm` — нужны только для MCP-серверов через `npx`), клонирует репо во временную директорию, копирует `.claude/`, рендерит `CLAUDE.md` и `.mcp.json` под workspace, делает хуки исполняемыми. По завершении автоматически запускает Claude Code с `CLAUDE_CONFIG_DIR=<target>/.claude-account` — на первом старте инициируется login flow. **Идемпотентный** — существующие файлы бэкапятся в `<имя>.bak`.
 
 <details>
 <summary><b>🐍 Под conda</b></summary>
@@ -65,30 +67,33 @@ curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install
 
 #### После установки
 
+Установщик сам запустит Claude Code в свежепоставленной workspace. Если первый раз — будет login flow (URL в терминале, открыть в браузере). Credentials сохранятся в `<target>/.claude-account/`.
+
+Повторный запуск:
+
 ```bash
-cd ~/harness                  # workspace, где лежит .claude/
-which claude                  # должен указывать на npm prefix; см. ниже если алиас
-claude                        # интерактивная TUI-сессия Claude Code
+cd <target>
+CLAUDE_CONFIG_DIR=$PWD/.claude-account claude
 ```
 
-> Если `claude` в shell прокинут на собственный alias (например `claude-account` с `CLAUDE_CONFIG_DIR=~/.claude-account` для multi-account setup), запускайте свою обёртку, а не дефолтный `claude`. Установщик от этого не зависит — только проверяет наличие CLI и предупреждает.
+Если в shell стоит alias-заглушка (типа `alias claude="echo 'Use specific commands: claude-username'"`, частый случай в MLSpace/JupyterHub), установщик сам это детектит и в подсказке к повторному запуску подставляет прямой путь к бинарю (`/home/jovyan/.local/bin/claude` или аналог).
 
 Внутри сессии:
 
 ```
 /env                       снимок окружения (conda, python, HF_HOME, GPU)
 /gpu  /procs  /git-status  быстрые состояния
-напиши hello.py …          обычный запрос — субагент подбирается по триггерам
+напиши hello.py …          запрос — субагент подбирается по триггерам
 Ctrl+D  или  /exit         выход
 ```
 
-История пишется в `~/harness/.claude/sessions/`.
+История сессий — в `<target>/.claude-account/sessions/`.
 
 <details>
 <summary><b>Флаги установщика</b></summary>
 
 ```
---target <путь>          куда поставить (по умолчанию ~/harness)
+--target <путь>          куда поставить (по умолчанию $PWD; если $PWD=$HOME → $HOME/harness_bro)
 --tools / --no-tools     ставить ruff + mypy + pytest
 --banned-paths a,b,c     запрет записи в эти пути (для hook nfs_guard)
 --yes                    использовать дефолты, ничего не спрашивать
@@ -98,7 +103,7 @@ Ctrl+D  или  /exit         выход
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh \
-  | bash -s -- --target /opt/harness --tools --yes
+  | bash -s -- --target /opt/harness_bro --tools --yes
 ```
 
 </details>
@@ -215,7 +220,7 @@ Read-only снимки состояния. Вводятся как `/<name>` в 
 
 99 SKILL.md файлов всего: **82 user-invocable** на верхнем уровне (29 curated + 53 ported) + **17 sub-skills** внутри портированных пакетов (skill-factory, super-hermes, evals, gstack), которые подгружаются on-demand их родителями. В `/skills` Claude Code показывает только верхний уровень. Каждый SKILL.md — markdown с YAML-frontmatter (`name`, `description` с триггерными фразами); описание ≤ 1024 символа, иначе Claude его пропускает.
 
-**Curated (29 top-level + 17 sub-skills = 46) — собственные / ключевые:**
+**Curated — собственные / ключевые** (29 top-level + 17 sub-skills во вложенных пакетах):
 
 - *Workflow:* `verify-claim`, `web-research`, `record-recipe`, `self-improve`, `brainstorming`, `writing-plans`, `systematic-debugging`, `test-driven-development`
 - *Безопасность:* `secret-guard`, `pre-commit-guard`
@@ -388,7 +393,7 @@ echo 'Что показывает: !`echo привет`' > .claude/commands/foo.
 | `curl: (6) Could not resolve host` | DNS / прокси, см. [MLSpace](#-mlspace--proxy) |
 | Хук блокирует команду | `cat .claude/hooks/имя.py` чтобы понять. Чтобы отключить — переименуйте `.py` |
 | `secret_guard` ложно срабатывает | `# noqa: secret` в строке |
-| Обновление | `git pull && ./install.sh --target ~/harness --yes` &nbsp;<sub>авто-бэкап в `.bak`</sub> |
+| Обновление | Перезапустить `curl … | bash` из той же директории — существующие файлы бэкапятся в `*.bak` |
 
 </details>
 

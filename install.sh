@@ -2,29 +2,30 @@
 # harness_bro — Claude Code dev environment installer
 # https://github.com/yanochka11/harness_bro
 #
-# Two ways to run:
+# Запуск:
 #
-#   1. One-liner (auto-clones repo into a temp dir):
+#   1. Один-лайнер (клонирует репо во временную директорию):
 #        curl -fsSL https://raw.githubusercontent.com/yanochka11/harness_bro/main/install.sh | bash
 #
-#      With flags:
-#        curl -fsSL https://.../install.sh | bash -s -- --target /opt/harness --yes
+#      С флагами:
+#        curl -fsSL https://.../install.sh | bash -s -- --target /opt/harness_bro --yes
 #
-#      Override repo / branch:
+#      Свой репо/ветка:
 #        HARNESS_REPO=https://github.com/foo/fork.git HARNESS_BRANCH=dev \
 #          bash -c "$(curl -fsSL https://.../install.sh)"
 #
-#   2. From a local clone:
+#   2. Из локального клона:
 #        git clone https://github.com/yanochka11/harness_bro.git
 #        cd harness_bro && ./install.sh
 #
-# Flags:
-#   --target <path>          where to install (default: $HOME/harness)
-#   --tools | --no-tools     install ruff/mypy/pytest via pip
-#   --banned-paths <a,b,c>   forbid writes here (HARNESS_BANNED_PATHS env var)
-#   --yes | -y               skip all prompts (use defaults)
+# Флаги:
+#   --target <path>          куда поставить (по умолчанию: $PWD; если $PWD=$HOME → $HOME/harness_bro)
+#   --tools | --no-tools     ставить ruff/mypy/pytest через pip
+#   --banned-paths <a,b,c>   запретить запись в эти пути (env HARNESS_BANNED_PATHS)
+#   --yes | -y               без интерактива, использовать дефолты
+#   --no-launch              не запускать claude автоматически в конце
 #
-# Idempotent: existing files in target are backed up to <name>.bak on first run.
+# Идемпотентный: существующие файлы в target бэкапятся в <name>.bak при первом прогоне.
 
 set -euo pipefail
 
@@ -89,6 +90,7 @@ TARGET=""
 INSTALL_TOOLS=""
 BANNED_PATHS=""
 NON_INTERACTIVE=0
+AUTO_LAUNCH=1
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -97,7 +99,8 @@ while [[ $# -gt 0 ]]; do
         --tools)          INSTALL_TOOLS="y"; NON_INTERACTIVE=1; shift ;;
         --banned-paths)   BANNED_PATHS="$2"; NON_INTERACTIVE=1; shift 2 ;;
         --yes|-y)         NON_INTERACTIVE=1; shift ;;
-        -h|--help)        sed -n '2,18p' "$0"; exit 0 ;;
+        --no-launch)      AUTO_LAUNCH=0; shift ;;
+        -h|--help)        sed -n '2,28p' "$0"; exit 0 ;;
         *) err "Unknown arg: $1"; exit 1 ;;
     esac
 done
@@ -394,10 +397,14 @@ Happy coding!
 EOF
 
 # ── auto-launch Claude Code ───────────────────────────────────────
-# Делаем CLAUDE_CONFIG_DIR внутри проекта (per-project credentials),
-# затем exec'аем реальный бинарь — login flow стартанёт автоматически
-# при первом запуске (CONFIG_DIR пустой → claude попросит auth).
+# CLAUDE_CONFIG_DIR кладётся внутрь проекта (per-project credentials).
+# Реальный бинарь exec'ится напрямую, минуя shell-alias. Login flow
+# стартанёт автоматически при первом запуске (CONFIG_DIR пустой).
 echo
+if [ "$AUTO_LAUNCH" -eq 0 ]; then
+    say "  ${DIM}--no-launch: автозапуск пропущен${N}"
+    exit 0
+fi
 if [ -z "$CLAUDE_REAL" ]; then
     warn "claude бинарь не найден в PATH — поставь Claude Code и запусти вручную:"
     say "  cd $TARGET && claude"
