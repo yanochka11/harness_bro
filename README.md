@@ -143,7 +143,7 @@ memory/              recipes/ · decisions/ · gotchas/ · style/
 
 🔁 **Самообучение.** `auto_save_skill` фиксирует устойчивые tool-паттерны (≥ 3 повторов, фильтр шума) как черновики скиллов.
 
-⚡ **43 read-only команды** в `permissions.allow` + `defaultMode: auto` — типичные `cat` / `ls` / `git status` / `pytest` выполняются без явного подтверждения.
+⚡ **43 allow-правила** в `permissions.allow` + `defaultMode: auto` — типичные `cat` / `ls` / `grep` / `pytest` / `git status` выполняются без подтверждения.
 
 🌍 **Без жёстких путей.** Всё через env vars и подстановку в шаблонах.
 
