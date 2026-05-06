@@ -185,14 +185,28 @@ fi
 echo
 
 # ── target dir ────────────────────────────────────────────────────
-DEFAULT_TARGET="$HOME/harness"
+# Default: install in current directory (юзер обычно cd'нул в проект и хочет сюда).
+# Если запущено из $HOME или / — создаём подкаталог harness_bro/, чтобы не засрать корень.
+if [ "$PWD" = "$HOME" ] || [ "$PWD" = "/" ]; then
+    DEFAULT_TARGET="$HOME/harness_bro"
+else
+    DEFAULT_TARGET="$PWD"
+fi
+
 if [ -z "$TARGET" ]; then
-    if [ -t 0 ] && [ "$NON_INTERACTIVE" -eq 0 ]; then
-        # stdin is a TTY — ask
-        read -rp "Install to [${DEFAULT_TARGET}]: " input
-        TARGET="${input:-$DEFAULT_TARGET}"
+    if [ "$NON_INTERACTIVE" -eq 0 ]; then
+        # Try TTY first (regular invocation), fallback to /dev/tty (curl|bash piping).
+        if [ -t 0 ]; then
+            read -rp "Install to [${DEFAULT_TARGET}]: " input
+            TARGET="${input:-$DEFAULT_TARGET}"
+        elif [ -r /dev/tty ]; then
+            read -rp "Install to [${DEFAULT_TARGET}]: " input < /dev/tty
+            TARGET="${input:-$DEFAULT_TARGET}"
+        else
+            TARGET="$DEFAULT_TARGET"
+            info "Non-interactive (no TTY) — using default target $TARGET"
+        fi
     else
-        # piped / non-interactive — silent default
         TARGET="$DEFAULT_TARGET"
         info "Non-interactive mode — using default target $TARGET"
     fi
@@ -321,30 +335,32 @@ cat <<EOF
 
 ${G}${BOLD}✓ harness_bro installed to:${N} $TARGET
 
-${BOLD}Next steps:${N}
+${BOLD}Запуск Claude Code:${N}
 
-  ${DIM}# 1. enter the workspace${N}
-  cd $TARGET
+  ${G}cd $TARGET && claude${N}
 
-  ${DIM}# 2. (optional) export env vars${N}
-  export HF_HOME=\$PWD/.cache/huggingface       # or your shared cache
-  export HARNESS_BANNED_PATHS=                  # comma-sep, e.g. /home/foo
-  export GITHUB_TOKEN=ghp_...                   # for github MCP server
+${BOLD}Опциональные env vars (export ДО \`claude\`):${N}
 
-  ${DIM}# 3. start Claude Code${N}
-  claude
+  ${DIM}# HuggingFace cache (по умолчанию ~/.cache/huggingface)${N}
+  export HF_HOME=$TARGET/.cache/huggingface
 
-${BOLD}Quick reference once in Claude:${N}
+  ${DIM}# запретить запись в эти пути (через nfs_guard hook)${N}
+  export HARNESS_BANNED_PATHS=/some/forbidden/path,/another
 
-  ${G}/env${N} ${G}/gpu${N} ${G}/pytest${N} ${G}/lint${N}        # slash commands (read-only snapshots)
-  «${Y}напиши${N}» «${Y}падает${N}» «${Y}запусти${N}»          # триггерят subagents
-  «${Y}запомни этот фикс${N}»                # добавить recipe в memory
-  «${Y}оптимизируй setup${N}»                # self-improve audit
+  ${DIM}# для github MCP сервера (issues / PR / repo)${N}
+  export GITHUB_TOKEN=ghp_...
 
-${BOLD}Docs:${N}
-  $TARGET/README.md           # full guide
-  $TARGET/CLAUDE.md           # what Claude reads at session start
-  $TARGET/.claude/skills/     # 99 skills (46 curated + 53 ported)
+${BOLD}Быстрая справка внутри Claude:${N}
+
+  ${G}/env${N} ${G}/gpu${N} ${G}/pytest${N} ${G}/lint${N}                  ${DIM}# slash commands (read-only snapshots)${N}
+  «${Y}напиши${N}» «${Y}падает${N}» «${Y}запусти${N}»            ${DIM}# триггерят subagents${N}
+  «${Y}запомни этот фикс${N}»                  ${DIM}# добавить recipe в memory${N}
+  «${Y}оптимизируй setup${N}»                  ${DIM}# self-improve audit${N}
+
+${BOLD}Документация:${N}
+  $TARGET/README.md           ${DIM}# full guide${N}
+  $TARGET/CLAUDE.md           ${DIM}# что Claude читает на старте сессии${N}
+  $TARGET/.claude/skills/     ${DIM}# 99 skills (46 curated + 53 ported)${N}
 
 Happy coding!
 EOF
